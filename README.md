@@ -66,6 +66,8 @@ cljash script.clj
 
 ## Example Script
 
+[![asciicast](https://asciinema.org/a/DemWRiWRkRz2v4ocFCHtarKxG.svg)](https://asciinema.org/a/DemWRiWRkRz2v4ocFCHtarKxG)
+
 ```clojure
 #!/usr/bin/env cljash
 (deps '[[io.jesi/backpack "3.3.0"]])
