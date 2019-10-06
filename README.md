@@ -80,10 +80,3 @@ cljash script.clj
 (println "Command line args: " *command-line-args*)
 (println "Random string:" (rnd/alpha-numeric))
 ```
-
-TODO
-
-## Todo
-
-- [ ] Shebang interpreter with dynamic dependency loading
-- [ ] Dynamic sub-command location and invocation
