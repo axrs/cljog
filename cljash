@@ -5,34 +5,24 @@
    export CLI_SCRIPT="$1"
    exec clojure $OPTS -Sdeps "$DEPS" "$0" "${@:2}"
 )
-;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+)
-;Refer to:
-;  https://github.com/cemerick/pomegranate#urlclassloader-modifiability
-;  https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
+;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
+; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
+; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
 (require '[dynapath.util])
 
 (defn- ensure-compiler-loader []
   (when-not (bound? Compiler/LOADER)
     (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
 
-(defn- classloader-hierarchy
-  "Returns a seq of classloaders, with the tip of the hierarchy first.
-   Uses the current thread context ClassLoader as the tip ClassLoader
-   if one is not provided."
-  ([]
+(defn- classloader-hierarchy []
    (ensure-compiler-loader)
-   (classloader-hierarchy (deref clojure.lang.Compiler/LOADER)))
-  ([tip]
-   (->> tip
+   (->> (deref clojure.lang.Compiler/LOADER)
         (iterate (fn [x] (.getParent ^ClassLoader x)))
-        (take-while boolean))))
+        (take-while boolean)))
 
 (require '[cemerick.pomegranate])
 (require '[clojure.string])
 
-;
-; Utility functions
-;
 (defn deps [m]
   (cemerick.pomegranate/add-dependencies
     :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
