@@ -16,7 +16,7 @@
 
 (defn- classloader-hierarchy []
    (ensure-compiler-loader)
-   (->> (deref clojure.lang.Compiler/LOADER)
+   (->> (deref Compiler/LOADER)
         (iterate (fn [x] (.getParent ^ClassLoader x)))
         (take-while boolean)))
 
