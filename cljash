@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#_(
+   DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
+   OPTS='-J-Xms256m -J-Xmx256m -J-client'
+   export CLI_SCRIPT="$1"
+   exec clojure $OPTS -Sdeps "$DEPS" "$0" "${@:2}"
+)
+;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
+; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
+; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
+(require '[dynapath.util])
+
+(defn- ensure-compiler-loader []
+  (when-not (bound? Compiler/LOADER)
+    (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
+
+(defn- classloader-hierarchy []
+   (ensure-compiler-loader)
+   (->> (deref Compiler/LOADER)
+        (iterate (fn [x] (.getParent ^ClassLoader x)))
+        (take-while boolean)))
+
+(require '[cemerick.pomegranate])
+(require '[clojure.string])
+
+(defn deps [m]
+  (cemerick.pomegranate/add-dependencies
+    :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+    :coordinates m
+    :repositories (merge cemerick.pomegranate.aether/maven-central
+                    {"clojars" "https://clojars.org/repo"})))
+
+(defonce script (System/getenv "CLI_SCRIPT"))
+
+(if-not (clojure.string/blank? script)
+  (load-file script)
+  (throw (RuntimeException. "No script specified")))
