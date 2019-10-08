@@ -50,7 +50,9 @@ as a Bash replacement.
 
 ## Installation
 
-TODO
+1. Download `cljash`. `wget https://raw.githubusercontent.com/axrs/cljash/master/cljash`
+1. Make executable. `chmod +x cljash`
+1. Move to a bin directory. `mv cljash /usr/bin/`
 
 ## Usage
 
