@@ -36,7 +36,7 @@ discover_clis() {
 	for i in ${!namespaces[@]};do
 		namespaces[$i]="${repo_dir}/${namespaces[$i]//./\/}"
 	done
-	local artifacts=$(find ${namespaces[@]} -name *.jar)
+	local artifacts=$(find ${namespaces[@]} -name *.jar | reverse)
 	for artifact in ${artifacts}; do
 		local artifact="${artifact:$repo_dir_str_length}"
 		local groupId=$(echo "$artifact" | rev | cut -d/ -f4- | rev | tr / .)
@@ -52,6 +52,7 @@ discover_clis() {
 
 discover_clis
 
+#TODO make this only run when required
 echo "Local Commands in: $repo_dir"
 for dep in "${!clis[@]}"
 do
@@ -64,3 +65,5 @@ do
 		echo -e "    $artifact\t$groupId\t$version\t$(cat "$pom" | grep -oPm1 "(?<=<description>)[^<]+")"
 	fi
 done | column -ts $'\t' | sort | cut -b -$(tput cols)
+
+#TODO Write config options
