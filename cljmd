@@ -157,6 +157,6 @@ else
 			log "Run 'cljmd --list' to see a list of all available commands";;
 		*)
 			discover_clis
-			run_cli "$1";;
+			run_cli "${@:1}";;
 	esac
 fi
