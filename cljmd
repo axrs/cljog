@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
+log() {
+	echo "cljmd: $1"
+}
+
+error_exit() {
+	echo "cljmd: $1" 1>&2
+	exit 1
+}
+
+hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
+
 CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client'
-hash clojure 2>/dev/null || { echo >&2 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'; exit 1; }
 
-args='['
-for arg in "${@:2}";do
-    args="$args \"$arg\""
-done
-args="$args ]"
+run_script(){ # path-to-script.clj & args
+	local args='['
+	for arg in "${@:2}";do
+			args="$args \"$arg\""
+	done
+	args="$args ]"
 
-if test -f "$1"; then
-#Script Execution
 	read -d '' clj_script << EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
@@ -37,21 +46,20 @@ if test -f "$1"; then
 
 (def ^:dynamic *cmdjure-version* "0.0.3")
 (def ^:dynamic *cwd* (System/getProperty "user.dir"))
-(def ^:dynamic *script* (seq "$1"))
+(def ^:dynamic *script* "$1")
 
 (binding [*command-line-args* $args]
   (load-file *script*))
 EOF
+
 	DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
 	exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
+}
+
+if test -f "$1"; then
+	run_script "${@:1}"
 else
 	config_file=$HOME/.cljmd
-
-	PROGNAME=$(basename $0)
-	error_exit() {
-		echo "${PROGNAME}: ${1:-"Unknown Error"}" 1>&2
-		exit 1
-	}
 
 	sed_escape() {
 		sed -e 's/[]\/$*.^[]/\\&/g'
@@ -132,12 +140,18 @@ else
 		matched || error_exit "Unable to find cli '$1'. Run '$PROGNAME --list' to see a list of all available commands"
 	}
 
-	discover_clis
 
 	case $1 in
+		--update|-u)
+			#TODO Download new version of dependencies
+			error_exit "TODO";;
 		--list|-l)
-				list_clis;;
-			*)
-				run_cli "$1";;
+			discover_clis
+			list_clis;;
+		"")
+			echo "Run '$PROGNAME --list' to see a list of all available commands";;
+		*)
+			discover_clis
+			run_cli "$1";;
 	esac
 fi
