@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
-#_(
-   #Version 0.0.2
-   DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
-   OPTS='-J-Xms256m -J-Xmx256m -J-client'
-   export CLI_SCRIPT="$1"
-   hash clojure 2>/dev/null || { echo >&2 "Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli"; exit 1; }
-   exec clojure $OPTS -Sdeps "$DEPS" "$0" "${@:2}"
-)
+
+DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
+OPTS='-J-Xms256m -J-Xmx256m -J-client'
+hash clojure 2>/dev/null || { echo >&2 "Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli"; exit 1; }
+
+args="["
+for arg in "${@:2}"
+do
+    args="$args \"$arg\""
+done
+args="$args ]"
+
+read -d '' clj_script << EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
@@ -17,10 +22,10 @@
     (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
 
 (defn- classloader-hierarchy []
-   (ensure-compiler-loader)
-   (->> (deref Compiler/LOADER)
-        (iterate (fn [x] (.getParent ^ClassLoader x)))
-        (take-while boolean)))
+  (ensure-compiler-loader)
+  (->> (deref Compiler/LOADER)
+       (iterate (fn [x] (.getParent ^ClassLoader x)))
+       (take-while boolean)))
 
 (require '[cemerick.pomegranate])
 (require '[clojure.string])
@@ -32,8 +37,14 @@
     :repositories (merge cemerick.pomegranate.aether/maven-central
                     {"clojars" "https://clojars.org/repo"})))
 
-(defonce script (System/getenv "CLI_SCRIPT"))
+(def ^:dynamic *cmdjure-version* "0.0.2")
+(def ^:dynamic *cwd* (System/getProperty "user.dir"))
+(def ^:dynamic *script* "$1")
 
-(if-not (clojure.string/blank? script)
-  (load-file script)
-  (throw (RuntimeException. "No script specified")))
+(binding [*command-line-args* $args]
+  (load-file *script*))
+EOF
+
+if test -f "$1"; then
+	exec clojure $OPTS -Sdeps "$DEPS" -e "$clj_script"
+fi
