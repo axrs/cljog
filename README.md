@@ -69,17 +69,18 @@ cljmd script.clj
 
 ## Example Script
 
-[![asciicast](https://asciinema.org/a/6W0FNNGCvOr1ezfN4PCVoXA3E.svg)](https://asciinema.org/a/6W0FNNGCvOr1ezfN4PCVoXA3E)
+[![asciicast](https://asciinema.org/a/XMfKMujCNV7jW0g5FTvadHTOV.svg)](https://asciinema.org/a/XMfKMujCNV7jW0g5FTvadHTOV)
 
 ```clojure
-#!/usr/bin/env cljmd 
+#!/usr/bin/env cljmd
 (deps '[[io.jesi/backpack "3.3.0"]])
 (require '[io.jesi.backpack.random :as rnd])
 
 (println "Hello! from the other side")
-(println "Script: " script)
-(println "Current working dir:" (System/getProperty "user.dir"))
+(println "Script: " *script*)
+(println "Current working dir:" *cwd*)
 (println "Clojure version: " *clojure-version*)
+(println "cmdjure version: " *cmdjure-version*)
 (println "Command line args: " *command-line-args*)
 (println "Random string:" (rnd/alpha-numeric))
 ```
