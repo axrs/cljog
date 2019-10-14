@@ -137,7 +137,9 @@ else
 				break
 			fi
 		done
-		matched || error_exit "Unable to find cli '$1'. Run '$PROGNAME --list' to see a list of all available commands"
+		if [[ matched != true ]]; then
+			error_exit "Unable to find cli '$1'. Run 'cljmd --list' to see a list of all available commands"
+		fi
 	}
 
 
@@ -149,7 +151,7 @@ else
 			discover_clis
 			list_clis;;
 		"")
-			echo "Run '$PROGNAME --list' to see a list of all available commands";;
+			log "Run 'cljmd --list' to see a list of all available commands";;
 		*)
 			discover_clis
 			run_cli "$1";;
