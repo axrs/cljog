@@ -1,16 +1,17 @@
-# cljash
+# cljmd 
+
+`(= "Clojure Command" cljmd)`
 
 Clojure for Automation Scripting and CLI Tools
 
 ```
- _______    _         _________   _______    _______            
-(  ____ \  ( \        \__    _/  (  ___  )  (  ____ \  |\     /|
-| (    \/  | (           )  (    | (   ) |  | (    \/  | )   ( |
-| |        | |           |  |    | (___) |  | (_____   | (___) |
-| |        | |           |  |    |  ___  |  (_____  )  |  ___  |
-| |        | |           |  |    | (   ) |        ) |  | (   ) |
-| (____/\  | (____/\  |\_)  )    | )   ( |  /\____) |  | )   ( |
-(_______/  (_______/  (____/     |/     \|  \_______)  |/     \|
+   _____ _          _ __  __ _____  
+  / ____| |        | |  \/  |  __ \ 
+ | |    | |        | | \  / | |  | |
+ | |    | |    _   | | |\/| | |  | |
+ | |____| |___| |__| | |  | | |__| |
+  \_____|______\____/|_|  |_|_____/ 
+                                    
 ```
 ---
 
@@ -38,7 +39,7 @@ I've always wanted to move away from Bash for automation into something that:
 Python, Node.js, and Java are all languages that can be used for automation, if you can use the standard libraries.
 Anything more complex requires additional steps to install dependencies and maintain. Inspired Alan Franzoni and his
 article [Standalone, single-file, editable Python scripts WITH DEPENDENCIES](https://www.franzoni.eu/single-file-editable-python-scripts-with-dependencies/), 
-I decided to create `cljash` for writing Clojure (with some inspiration from [Eric Normand](https://github.com/ericnormand)
+I decided to create `cljmd` for writing Clojure (with some inspiration from [Eric Normand](https://github.com/ericnormand)
 Boilerplate for running Clojure as a shebang script [Gist](https://gist.github.com/ericnormand/6bb4562c4bc578ef223182e3bb1e72c5/))
 as a Bash replacement.
 
@@ -50,35 +51,36 @@ as a Bash replacement.
 
 ## Installation
 
-1. Download `cljash`. `wget https://raw.githubusercontent.com/axrs/cljash/master/cljash`
-1. Make executable. `chmod +x cljash`
-1. Move to a bin directory. `mv cljash /usr/bin/`
+1. Download `cljmd`. `wget https://raw.githubusercontent.com/axrs/cljmd/master/cljmd`
+1. Make executable. `chmod +x cljmd`
+1. Move to a bin directory. `mv cljmd /usr/bin/`
 
 ## Usage
 
-1. Install `cljash` into a bin directory and make it executable
-1. Create a script with the `cljash` interpreter shebang. `#!/usr/bin/env cljash`
-1. Make the script executable and invoke it; or run it directly through `cljash`
+1. Install `cljmd` into a bin directory and make it executable
+1. Create a script with the `cljmd` interpreter shebang. `#!/usr/bin/env cljmd`
+1. Make the script executable and invoke it; or run it directly through `cljmd`
 
 ```bash
 ./script.clj 
 # or
-cljash script.clj
+cljmd script.clj
 ```
 
 ## Example Script
 
-[![asciicast](https://asciinema.org/a/DemWRiWRkRz2v4ocFCHtarKxG.svg)](https://asciinema.org/a/DemWRiWRkRz2v4ocFCHtarKxG)
+[![asciicast](https://asciinema.org/a/XMfKMujCNV7jW0g5FTvadHTOV.svg)](https://asciinema.org/a/XMfKMujCNV7jW0g5FTvadHTOV)
 
 ```clojure
-#!/usr/bin/env cljash
+#!/usr/bin/env cljmd
 (deps '[[io.jesi/backpack "3.3.0"]])
 (require '[io.jesi.backpack.random :as rnd])
 
 (println "Hello! from the other side")
-(println "Script: " script)
-(println "Current working dir:" (System/getProperty "user.dir"))
+(println "Script: " *script*)
+(println "Current working dir:" *cwd*)
 (println "Clojure version: " *clojure-version*)
+(println "cmdjure version: " *cmdjure-version*)
 (println "Command line args: " *command-line-args*)
 (println "Random string:" (rnd/alpha-numeric))
 ```
