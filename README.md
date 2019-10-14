@@ -69,7 +69,7 @@ cljmd script.clj
 
 ## Example Script
 
-[![asciicast](https://asciinema.org/a/DemWRiWRkRz2v4ocFCHtarKxG.svg)](https://asciinema.org/a/DemWRiWRkRz2v4ocFCHtarKxG)
+[![asciicast](https://asciinema.org/a/6W0FNNGCvOr1ezfN4PCVoXA3E.svg)](https://asciinema.org/a/6W0FNNGCvOr1ezfN4PCVoXA3E)
 
 ```clojure
 #!/usr/bin/env cljmd 
