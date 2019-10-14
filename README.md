@@ -1,6 +1,6 @@
 # cljmd 
 
-`(= "Clojure Command" cljmand)`
+`(= "Clojure Command" cljmd)`
 
 Clojure for Automation Scripting and CLI Tools
 
