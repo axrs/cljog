@@ -36,7 +36,7 @@ discover_clis() {
 	for i in ${!namespaces[@]};do
 		namespaces[$i]="${repo_dir}/${namespaces[$i]//./\/}"
 	done
-	local artifacts=$(find ${namespaces[@]} -name *.jar | reverse)
+	local artifacts=$(find ${namespaces[@]} -name *.jar | tac)
 	for artifact in ${artifacts}; do
 		local artifact="${artifact:$repo_dir_str_length}"
 		local groupId=$(echo "$artifact" | rev | cut -d/ -f4- | rev | tr / .)
