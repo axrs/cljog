@@ -88,7 +88,7 @@ else
 		for i in ${!namespaces[@]};do
 			namespaces[$i]="${repo_dir}/${namespaces[$i]//./\/}"
 		done
-		local artifacts=$(find ${namespaces[@]} -name *.jar | tac)
+		local artifacts=$(find ${namespaces[@]} -name *.jar 2>/dev/null | tac)
 		for artifact in ${artifacts}; do
 			local artifact="${artifact:$repo_dir_str_length}"
 			local groupId=$(echo "$artifact" | rev | cut -d/ -f4- | rev | tr / .)
