@@ -84,20 +84,22 @@ else
 
 	repo_root=$(cfg_read repository)
 	[[ -z "$repo_root" ]] && error_exit "'repository' config value not found."
-	repo_dir="$repo_root/repository"
 
-	declare -A clis
 	namespaces=$(cfg_read discovery_namespaces)
+	[[ -z "$namespaces" ]] && error_exit "'discovery_namespaces' config value not found."
+
+	repo_dir="$repo_root/repository"
 	repo_dir_str_length=$((${#repo_dir} + 1))
 
+	declare -A clis
+
 	discover_clis() {
-		[[ -z "$namespaces" ]] && error_exit "'discovery_namespaces' config value not found."
 		namespaces=(${namespaces//,/ })
 		for i in ${!namespaces[@]};do
 			namespaces[$i]="${repo_dir}/${namespaces[$i]//./\/}"
 		done
 		local artifacts=$(find ${namespaces[@]} -name *.jar 2>/dev/null | tac)
-		for artifact in ${artifacts}; do
+		for artifact in ${artifacts};do
 			local artifact="${artifact:$repo_dir_str_length}"
 			local groupId=$(echo "$artifact" | rev | cut -d/ -f4- | rev | tr / .)
 			local artifactId=$(echo "$artifact" | awk -F/ '{print $(NF-2)}')
@@ -118,7 +120,7 @@ else
 			local pom="$repo_dir/$(echo "$dep" | tr . /)/$version/*$version.pom"
 			pom=$(realpath ${pom})
 			local groupId=$(echo ${dep} | cut -d/ -f1)
-			if test -f "$pom"; then
+			if test -f "$pom";then
 				echo -e "    $artifact\t$groupId\t$version\t$(cat "$pom" | grep -oPm1 "(?<=<description>)[^<]+")"
 			fi
 		done | column -ts $'\t' | sort | cut -b -$(tput cols)
@@ -137,11 +139,10 @@ else
 				break
 			fi
 		done
-		if [[ matched != true ]]; then
+		if [[ matched != true ]];then
 			error_exit "Unable to find cli '$1'. Run 'cljmd --list' to see a list of all available commands"
 		fi
 	}
-
 
 	case $1 in
 		--update|-u)
