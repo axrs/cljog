@@ -1,7 +1,10 @@
 # 0.0.4
 
 Added:
-* First pass of sub-command discovery and invocation
+* First pass of sub-command discovery and invocation with multiple `groupId` support
+* `--list` or `-l` arg to list installed sub-commands. e.g. `cljmd --list`
+* Some useful error messages
+* Simple config read/write tools
 
 # 0.0.3
 
