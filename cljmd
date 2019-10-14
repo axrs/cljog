@@ -15,7 +15,7 @@ CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client'
 run_script(){ # path-to-script.clj & args
 	local args='['
 	for arg in "${@:2}";do
-			args="$args \"$arg\""
+		args="$args \"$arg\""
 	done
 	args="$args ]"
 
@@ -127,24 +127,25 @@ else
 	}
 
 	run_cli(){
-		local matched
-		for dep in "${!clis[@]}";do
-			if [[ "$dep" == */${1} ]];then
-				local version="${clis[$dep]}"
-				local groupId=$(echo ${dep} | cut -d/ -f1)
-				local ns=$(echo $dep | tr / .)
-				local DEPS="{:deps {$dep {:mvn/version \"${version}\"}}}"
-				matched=true
-				exec clojure $CLJ_OPTS -Sdeps "$DEPS" -m ${ns}.core "${@:2}"
+		local dep
+		local version
+		for cli in "${!clis[@]}";do
+			if [[ "$cli" == */${1} ]];then
+				dep=$cli
+				version="${clis[$cli]}"
 				break
 			fi
 		done
-		if [[ matched != true ]];then
+		if [[ -n "$version" ]];then
+				local DEPS="{:deps {$dep {:mvn/version \"${version}\"}}}"
+				local ns=$(echo $cli | tr / .)
+				exec clojure $CLJ_OPTS -Sdeps "$DEPS" -m ${ns}.core "${@:2}"
+		else
 			error_exit "Unable to find cli '$1'. Run 'cljmd --list' to see a list of all available commands"
 		fi
 	}
 
-	case $1 in
+	case "$1" in
 		--update|-u)
 			#TODO Download new version of dependencies
 			error_exit "TODO";;
