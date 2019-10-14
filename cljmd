@@ -37,7 +37,7 @@ read -d '' clj_script << EOF
     :repositories (merge cemerick.pomegranate.aether/maven-central
                     {"clojars" "https://clojars.org/repo"})))
 
-(def ^:dynamic *cmdjure-version* "0.0.2")
+(def ^:dynamic *cmdjure-version* "0.0.3")
 (def ^:dynamic *cwd* (System/getProperty "user.dir"))
 (def ^:dynamic *script* "$1")
 
