@@ -57,7 +57,7 @@ EOF
 	exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
 }
 
-if test -f "$1"; then
+if test -f "$1";then
 	run_script "${@:1}"
 else
 	config_file=$HOME/.cljmd
