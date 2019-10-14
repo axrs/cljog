@@ -1,14 +1,25 @@
 #!/usr/bin/env bash
-hash clojure 2>/dev/null || { echo >&2 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'; exit 1; }
+log() {
+	echo "cljmd: $1"
+}
 
-args='['
-for arg in "${@:2}";do
-    args="$args \"$arg\""
-done
-args="$args ]"
+error_exit() {
+	echo "cljmd: $1" 1>&2
+	exit 1
+}
 
-if test -f "$1"; then
-#Script Execution
+hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
+
+CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client -J-XX:MaxMetaspaceSize=100m -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled -J-Xverify:none'
+VERSION=0.0.4
+
+run_script(){ # path-to-script.clj & args
+	local args='['
+	for arg in "${@:2}";do
+		args="$args \"$arg\""
+	done
+	args="$args ]"
+
 	read -d '' clj_script << EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
@@ -34,13 +45,118 @@ if test -f "$1"; then
     :coordinates m
     :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"})))
 
-(def ^:dynamic *cmdjure-version* "0.0.3")
+(def ^:dynamic *cmdjure-version* "$VERSION")
 (def ^:dynamic *cwd* (System/getProperty "user.dir"))
 (def ^:dynamic *script* "$1")
 
 (binding [*command-line-args* $args]
   (load-file *script*))
 EOF
+
 	DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
-	exec clojure -J-Xms256m -J-Xmx256m -J-client -Sdeps "$DEPS" -e "$clj_script"
+	exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
+}
+
+if test -f "$1";then
+	run_script "${@:1}"
+else
+	config_file=$HOME/.cljmd
+
+	sed_escape() {
+		sed -e 's/[]\/$*.^[]/\\&/g'
+	}
+
+	cfg_write() { # key, value
+		cfg_delete "$config_file" "$1"
+		echo "$1=$2" >> "$config_file"
+	}
+
+	cfg_read() { # key -> value
+		test -f "$config_file" && grep "^$(echo "$1" | sed_escape)=" "$config_file" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
+	}
+
+	cfg_delete() { # key
+		test -f "$config_file" && sed -i "/^$(echo $1 | sed_escape).*$/d" "$config_file"
+	}
+
+	cfg_haskey() { # key
+		test -f "$config_file" && grep "^$(echo "$1" | sed_escape)=" "$config_file" > /dev/null
+	}
+
+	repo_root=$(cfg_read repository)
+	[[ -z "$repo_root" ]] && error_exit "'repository' config value not found."
+
+	namespaces=$(cfg_read discovery_namespaces)
+	[[ -z "$namespaces" ]] && error_exit "'discovery_namespaces' config value not found."
+
+	repo_dir="$repo_root/repository"
+	repo_dir_str_length=$((${#repo_dir} + 1))
+
+	declare -A clis
+
+	discover_clis() {
+		namespaces=(${namespaces//,/ })
+		for i in ${!namespaces[@]};do
+			namespaces[$i]="${repo_dir}/${namespaces[$i]//./\/}"
+		done
+		local artifacts=$(find ${namespaces[@]} -name *.jar 2>/dev/null | tac)
+		for artifact in ${artifacts};do
+			local artifact="${artifact:$repo_dir_str_length}"
+			local groupId=$(echo "$artifact" | rev | cut -d/ -f4- | rev | tr / .)
+			local artifactId=$(echo "$artifact" | awk -F/ '{print $(NF-2)}')
+			local version=$(echo "$artifact" | awk -F/ '{print $(NF-1)}')
+			local cli="$groupId/$artifactId"
+			local knownVersion=${clis["$cli"]}
+			if [[ ${version} > ${knownVersion} ]];then
+				clis["$cli"]="$version"
+			fi
+		done
+	}
+
+	list_clis() {
+		echo "Local Commands in: $repo_dir"
+		for dep in "${!clis[@]}";do
+			local artifact=$(echo "$dep" | awk -F/ '{print $NF}')
+			local version="${clis[$dep]}"
+			local pom="$repo_dir/$(echo "$dep" | tr . /)/$version/*$version.pom"
+			pom=$(realpath ${pom})
+			local groupId=$(echo ${dep} | cut -d/ -f1)
+			if test -f "$pom";then
+				echo -e "    $artifact\t$groupId\t$version\t$(cat "$pom" | grep -oPm1 "(?<=<description>)[^<]+")"
+			fi
+		done | column -ts $'\t' | sort | cut -b -$(tput cols)
+	}
+
+	run_cli(){
+		local dep
+		local version
+		for cli in "${!clis[@]}";do
+			if [[ "$cli" == */${1} ]];then
+				dep=$cli
+				version="${clis[$cli]}"
+				break
+			fi
+		done
+		if [[ -n "$version" ]];then
+				local DEPS="{:deps {$dep {:mvn/version \"${version}\"}}}"
+				local ns=$(echo $cli | tr / .)
+				exec clojure $CLJ_OPTS -Sdeps "$DEPS" -m ${ns}.core "${@:2}"
+		else
+			error_exit "Unable to find cli '$1'. Run 'cljmd --list' to see a list of all available commands"
+		fi
+	}
+
+	case "$1" in
+		--update|-u)
+			#TODO Download new version of dependencies
+			error_exit "TODO";;
+		--list|-l)
+			discover_clis
+			list_clis;;
+		"")
+			log "Run 'cljmd --list' to see a list of all available commands";;
+		*)
+			discover_clis
+			run_cli "$1";;
+	esac
 fi

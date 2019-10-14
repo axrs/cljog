@@ -1,5 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="LeiningenProjectsManager">
+    <option name="projectFiles">
+      <list>
+        <option value="file://$PROJECT_DIR$/example/project.clj" />
+      </list>
+    </option>
+  </component>
   <component name="MarkdownProjectSettings" wasCopied="true">
     <PreviewSettings splitEditorLayout="FIRST" splitEditorPreview="PREVIEW" useGrayscaleRendering="false" zoomFactor="0.8" maxImageWidth="900" showGitHubPageIfSynced="false" allowBrowsingInPreview="false" synchronizePreviewPosition="true" highlightPreviewType="LINE" highlightFadeOut="5" highlightOnTyping="true" synchronizeSourcePosition="true" verticallyAlignSourceAndPreviewSyncPosition="true" showSearchHighlightsInPreview="true" showSelectionInPreview="true" openRemoteLinks="true" replaceUnicodeEmoji="false" lastLayoutSetsDefault="false">
       <PanelProvider>
@@ -82,7 +89,7 @@
       <textMaps />
     </LinkMapSettings>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_6" project-jdk-name="jdk" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>
