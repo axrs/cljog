@@ -1,50 +1,47 @@
 #!/usr/bin/env bash
+hash clojure 2>/dev/null || { echo >&2 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'; exit 1; }
 
-DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
-OPTS='-J-Xms256m -J-Xmx256m -J-client'
-hash clojure 2>/dev/null || { echo >&2 "Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli"; exit 1; }
-
-args="["
-for arg in "${@:2}"
-do
+args='['
+for arg in "${@:2}";do
     args="$args \"$arg\""
 done
 args="$args ]"
 
-read -d '' clj_script << EOF
+if test -f "$1"; then
+#Script Execution
+	read -d '' clj_script << EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
 (require '[dynapath.util])
 
 (defn- ensure-compiler-loader []
-  (when-not (bound? Compiler/LOADER)
-    (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
+	(when-not (bound? Compiler/LOADER)
+		(.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
 
 (defn- classloader-hierarchy []
-  (ensure-compiler-loader)
-  (->> (deref Compiler/LOADER)
-       (iterate (fn [x] (.getParent ^ClassLoader x)))
-       (take-while boolean)))
+	(ensure-compiler-loader)
+	(->> (deref Compiler/LOADER)
+			 (iterate (fn [x] (.getParent ^ClassLoader x)))
+			 (take-while boolean)))
 
 (require '[cemerick.pomegranate])
 (require '[clojure.string])
 
 (defn deps [m]
-  (cemerick.pomegranate/add-dependencies
-    :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
-    :coordinates m
-    :repositories (merge cemerick.pomegranate.aether/maven-central
-                    {"clojars" "https://clojars.org/repo"})))
+	(cemerick.pomegranate/add-dependencies
+		:classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+		:coordinates m
+		:repositories (merge cemerick.pomegranate.aether/maven-central
+										{"clojars" "https://clojars.org/repo"})))
 
 (def ^:dynamic *cmdjure-version* "0.0.3")
 (def ^:dynamic *cwd* (System/getProperty "user.dir"))
 (def ^:dynamic *script* "$1")
 
 (binding [*command-line-args* $args]
-  (load-file *script*))
+	(load-file *script*))
 EOF
-
-if test -f "$1"; then
-	exec clojure $OPTS -Sdeps "$DEPS" -e "$clj_script"
+	DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
+	exec clojure -J-Xms256m -J-Xmx256m -J-client -Sdeps "$DEPS" -e "$clj_script"
 fi
