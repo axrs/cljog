@@ -124,7 +124,7 @@ else
 			pom=$(realpath ${pom})
 			local groupId=$(echo ${dep} | cut -d/ -f1)
 			if test -f "$pom";then
-				echo -e "    $artifact\t$groupId\t$version\t$(cat "$pom" | grep -oPm1 "(?<=<description>)[^<]+")"
+				echo -e "    $artifact\t$groupId\t$version\t$(awk -F '[<>]' '/description/{print $3}' "$pom")"
 			fi
 		done | column -ts $'\t' | sort | cut -b -$(tput cols)
 	}
