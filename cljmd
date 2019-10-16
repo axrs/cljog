@@ -8,10 +8,12 @@ error_exit() {
 	exit 1
 }
 
+[[ "$BASH_VERSION" < "4" ]] && error_exit "Bash version 4+ is required"
+
 hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
 
 CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client -J-XX:MaxMetaspaceSize=100m -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled -J-Xverify:none'
-VERSION=0.0.4
+VERSION=0.0.5
 
 run_script(){ # path-to-script.clj & args
 	local args='['
@@ -122,7 +124,7 @@ else
 			pom=$(realpath ${pom})
 			local groupId=$(echo ${dep} | cut -d/ -f1)
 			if test -f "$pom";then
-				echo -e "    $artifact\t$groupId\t$version\t$(cat "$pom" | grep -oPm1 "(?<=<description>)[^<]+")"
+				echo -e "    $artifact\t$groupId\t$version\t$(awk -F '[<>]' '/description/{print $3}' "$pom")"
 			fi
 		done | column -ts $'\t' | sort | cut -b -$(tput cols)
 	}
@@ -157,6 +159,6 @@ else
 			log "Run 'cljmd --list' to see a list of all available commands";;
 		*)
 			discover_clis
-			run_cli "$1";;
+			run_cli "${@:1}";;
 	esac
 fi

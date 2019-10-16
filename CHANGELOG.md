@@ -1,3 +1,10 @@
+# 0.0.5
+
+Fixed:
+* Passing args into sub-commands
+* Check to make sure bash if version 4+ for associative arrays
+* Swap out `grep` for `awk` when extracting pom description because of potential missing `-P` flag
+
 # 0.0.4
 
 Added:
