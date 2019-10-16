@@ -51,13 +51,20 @@ as a Bash replacement.
 
 ## Installation
 
-1. Download `cljmd`. `wget https://raw.githubusercontent.com/axrs/cljmd/master/cljmd`
-1. Make executable. `chmod +x cljmd`
-1. Move to a bin directory. `mv cljmd /usr/bin/`
+On Mac
+```bash
+#FIXME add tap
+brew tap 
+brew install cljmd
+```
+Or
+1. Download `cljmd`: `wget https://raw.githubusercontent.com/axrs/cljmd/master/cljmd`
+1. Make executable: `chmod u+x cljmd`
+1. Move to a bin directory: `mv cljmd /usr/local/bin/`
 
 ## Usage
 
-1. Install `cljmd` into a bin directory and make it executable
+1. Install `cljmd`
 1. Create a script with the `cljmd` interpreter shebang. `#!/usr/bin/env cljmd`
 1. Make the script executable and invoke it; or run it directly through `cljmd`
 
