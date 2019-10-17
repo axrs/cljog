@@ -26,33 +26,34 @@ run_script(){ # path-to-script.clj & args
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
-(require '[dynapath.util])
+(do
+	(require '[dynapath.util])
 
-(defn- ensure-compiler-loader []
-  (when-not (bound? Compiler/LOADER)
-    (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
+	(defn- ensure-compiler-loader []
+		(when-not (bound? Compiler/LOADER)
+			(.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
 
-(defn- classloader-hierarchy []
-  (ensure-compiler-loader)
-  (->> (deref Compiler/LOADER)
-       (iterate (fn [x] (.getParent ^ClassLoader x)))
-       (take-while boolean)))
+	(defn- classloader-hierarchy []
+		(ensure-compiler-loader)
+		(->> (deref Compiler/LOADER)
+				 (iterate (fn [x] (.getParent ^ClassLoader x)))
+				 (take-while boolean)))
 
-(require '[cemerick.pomegranate])
-(require '[clojure.string])
+	(require '[cemerick.pomegranate])
 
-(defn deps [m]
-  (cemerick.pomegranate/add-dependencies
-    :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
-    :coordinates m
-    :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"})))
+	(defn deps [m]
+		(cemerick.pomegranate/add-dependencies
+			:classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+			:coordinates m
+			:repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"})))
 
-(def ^:dynamic *cmdjure-version* "$VERSION")
-(def ^:dynamic *cwd* (System/getProperty "user.dir"))
-(def ^:dynamic *script* "$1")
+	(def ^:dynamic *cmdjure-version* "$VERSION")
+	(def ^:dynamic *cwd* (System/getProperty "user.dir"))
+	(def ^:dynamic *script* "$1")
 
-(binding [*command-line-args* $args]
-  (load-file *script*))
+	(binding [*command-line-args* $args]
+		(load-file *script*))
+	nil)
 EOF
 
 	DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
