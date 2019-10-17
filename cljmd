@@ -56,7 +56,11 @@ run_script(){ # path-to-script.clj & args
 	nil)
 EOF
 
-	DEPS='{:deps {com.cemerick/pomegranate {:mvn/version "1.1.0"}}}'
+	#language=clj
+	DEPS='{:deps          {com.cemerick/pomegranate {:mvn/version "1.1.0" :exclusions [commons-logging]}
+                 org.slf4j/slf4j-nop      {:mvn/version "1.7.22"}}
+ :override-deps {org.slf4j/slf4j-api      {:mvn/version "1.7.22"}
+                 org.slf4j/jcl-over-slf4j {:mvn/version "1.7.22"}}}'
 	exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
 }
 
