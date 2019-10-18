@@ -1,3 +1,7 @@
+# 0.0.6
+
+* Renamed project from `cljmd` to `cljog` to avoid conflicts with existing GitHub project
+
 # 0.0.5
 
 Fixed:

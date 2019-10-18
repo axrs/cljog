@@ -1,5 +1,5 @@
-#!/usr/bin/env cljmd
-; A simple example of using Etaoin with cljmd to automate a browser adapted from
+#!/usr/bin/env cljog
+; A simple example of using Etaoin with cljog to automate a browser adapted from
 ; https://github.com/igrishaev/etaoin#getting-stated
 (deps '[[etaoin "0.3.5"]])
 

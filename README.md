@@ -1,17 +1,18 @@
-# cljmd 
+# cljog
 
-`(= "Clojure Command" cljmd)`
+`(= "Clojure Command Jogger" cljog)`
 
 Clojure for Automation Scripting and CLI Tools
 
 ```
-   _____ _          _ __  __ _____  
-  / ____| |        | |  \/  |  __ \ 
- | |    | |        | | \  / | |  | |
- | |    | |    _   | | |\/| | |  | |
- | |____| |___| |__| | |  | | |__| |
-  \_____|______\____/|_|  |_|_____/ 
-                                    
+  ________     ____        _____   
+ (___  ___)   / __ \      / ___ \  
+     ) )     / /  \ \    / /   \_) 
+    ( (     ( ()  () )  ( (  ____  
+ __  ) )    ( ()  () )  ( ( (__  ) 
+( (_/ /      \ \__/ /    \ \__/ /  
+ \___/        \____/      \____/   
+                                   
 ```
 ---
 
@@ -39,7 +40,7 @@ I've always wanted to move away from Bash for automation into something that:
 Python, Node.js, and Java are all languages that can be used for automation, if you can use the standard libraries.
 Anything more complex requires additional steps to install dependencies and maintain. Inspired Alan Franzoni and his
 article [Standalone, single-file, editable Python scripts WITH DEPENDENCIES](https://www.franzoni.eu/single-file-editable-python-scripts-with-dependencies/), 
-I decided to create `cljmd` for writing Clojure (with some inspiration from [Eric Normand](https://github.com/ericnormand)
+I decided to create `cljog` for writing Clojure (with some inspiration from [Eric Normand](https://github.com/ericnormand)
 Boilerplate for running Clojure as a shebang script [Gist](https://gist.github.com/ericnormand/6bb4562c4bc578ef223182e3bb1e72c5/))
 as a Bash replacement.
 
@@ -51,20 +52,20 @@ as a Bash replacement.
 
 ## Installation
 
-1. Download `cljmd`. `wget https://raw.githubusercontent.com/axrs/cljmd/master/cljmd`
-1. Make executable. `chmod +x cljmd`
-1. Move to a bin directory. `mv cljmd /usr/bin/`
+1. Download `cljog`. `wget https://raw.githubusercontent.com/axrs/cljog/master/cljog`
+1. Make executable. `chmod +x cljog`
+1. Move to a bin directory. `mv cljog /usr/bin/`
 
 ## Usage
 
-1. Install `cljmd` into a bin directory and make it executable
-1. Create a script with the `cljmd` interpreter shebang. `#!/usr/bin/env cljmd`
-1. Make the script executable and invoke it; or run it directly through `cljmd`
+1. Install `cljog` into a bin directory and make it executable
+1. Create a script with the `cljog` interpreter shebang. `#!/usr/bin/env cljog`
+1. Make the script executable and invoke it; or run it directly through `cljog`
 
 ```bash
 ./script.clj 
 # or
-cljmd script.clj
+cljog script.clj
 ```
 
 ## Example Scripts
