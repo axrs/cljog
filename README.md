@@ -2,7 +2,7 @@
 
 `(= "Clojure Command Jogger" cljog)`
 
-Clojure for Automation Scripting and CLI Tools
+Making Clojure automation scripts and CLI tools run... or at least Jog.
 
 ```
    ____ _        _  ___   ____ 
