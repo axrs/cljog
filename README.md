@@ -71,4 +71,4 @@ cljog script.clj
 * [Webdriver](example-scripts/webdriver.clj)
 * [Echo](example-scripts/echo.clj)
 
-[![asciicast](https://asciinema.org/a/XMfKMujCNV7jW0g5FTvadHTOV.svg)](https://asciinema.org/a/XMfKMujCNV7jW0g5FTvadHTOV)
+[![asciicast](https://asciinema.org/a/RQgIhwYabsER0HqHcUiVFoIRD.svg)](https://asciinema.org/a/RQgIhwYabsER0HqHcUiVFoIRD)
