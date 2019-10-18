@@ -1,3 +1,8 @@
+# 0.1.0
+
+Added:
+* First pass of sub-command remote discovery and installation
+
 # 0.0.7
 
 * Renamed project from `cljmd` to `cljog` to avoid conflicts with existing GitHub project

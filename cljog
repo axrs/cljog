@@ -13,7 +13,7 @@ error_exit() {
 hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
 
 CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client -J-XX:MaxMetaspaceSize=100m -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled -J-Xverify:none'
-VERSION=0.0.6
+VERSION=0.1.0
 
 run_script(){ # path-to-script.clj & args
 	local args='['
