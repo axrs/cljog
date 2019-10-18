@@ -1,3 +1,13 @@
+# 0.0.7
+
+* Renamed project from `cljmd` to `cljog` to avoid conflicts with existing GitHub project
+
+# 0.0.6
+
+Fixed:
+* Reduced the amount of dependencies loaded by Pomegranate - Thanks @AndreTheHunter
+* Hushed the pre-load output when running as a script - Thanks @AndreTheHunter
+
 # 0.0.5
 
 Fixed:

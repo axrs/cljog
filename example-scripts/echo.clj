@@ -1,4 +1,4 @@
-#!/usr/bin/env cljmd
+#!/usr/bin/env cljog
 (deps '[[io.jesi/backpack "3.3.0"]])
 (require '[io.jesi.backpack.random :as rnd])
 

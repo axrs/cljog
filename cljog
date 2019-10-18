@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 log() {
-	echo "cljmd: $1"
+	echo "cljog: $1"
 }
 
 error_exit() {
-	echo "cljmd: $1" 1>&2
+	echo "cljog: $1" 1>&2
 	exit 1
 }
 
@@ -68,7 +68,7 @@ EOF
 if test -f "$1";then
 	run_script "${@:1}"
 else
-	config_file=$HOME/.cljmd
+	config_file=$HOME/.cljog
 
 	sed_escape() {
 		sed -e 's/[]\/$*.^[]/\\&/g'
@@ -150,7 +150,7 @@ else
 				local ns=$(echo $cli | tr / .)
 				exec clojure $CLJ_OPTS -Sdeps "$DEPS" -m ${ns}.core "${@:2}"
 		else
-			error_exit "Unable to find cli '$1'. Run 'cljmd --list' to see a list of all available commands"
+			error_exit "Unable to find cli '$1'. Run 'cljog --list' to see a list of all available commands"
 		fi
 	}
 
@@ -162,7 +162,7 @@ else
 			discover_clis
 			list_clis;;
 		"")
-			log "Run 'cljmd --list' to see a list of all available commands";;
+			log "Run 'cljog --list' to see a list of all available commands";;
 		*)
 			discover_clis
 			run_cli "${@:1}";;
