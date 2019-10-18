@@ -22,7 +22,7 @@ run_script(){ # path-to-script.clj & args
 	done
 	args="$args ]"
 
-	read -d '' clj_script << EOF
+	read -r -d '' clj_script << EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
@@ -63,6 +63,73 @@ EOF
    :override-deps {org.slf4j/slf4j-api      {:mvn/version "1.7.22"}
                    org.slf4j/jcl-over-slf4j {:mvn/version "1.7.22"}}}'
   exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
+}
+
+update_clis(){ #namespaces
+	local namespaces=$1
+	local tmpdir=$(dirname $(mktemp -u))
+	read -r -d '' clj_script << EOF
+(deps '[[clj-http "3.10.0"]
+        [cheshire "5.9.0"]])
+
+(require
+  '[clj-http.client :as client]
+  '[clojure.string :as str])
+
+(def groups (some-> *command-line-args* seq first (str/split #",")))
+(def connection-pool-defaults {:timeout 5 :threads 4 :insecure? false :default-per-route 10})
+
+(defn- ->dep [group-key artifact-key version-key m]
+  (when-let [group (group-key m)]
+    (let [cli (str group \/ (artifact-key m))]
+      [(symbol cli) (version-key m)])))
+
+(defn- fetch-from-clojars [groups]
+  (let [clis (atom [])]
+    (client/with-connection-pool connection-pool-defaults
+      (doseq [group groups]
+        (->> (client/get (str "https://clojars.org/api/groups/" group) {:accept           :application/edn
+                                                                        :throw-exceptions false
+                                                                        :as               :clojure})
+          :body
+          (swap! clis concat))))
+    (keep (partial ->dep :group_name :jar_name :latest_version) @clis)))
+
+(defn- fetch-from-mvn [groups]
+  (let [clis (atom [])]
+    (client/with-connection-pool connection-pool-defaults
+      (doseq [group groups]
+        (->> (client/get "https://search.maven.org/solrsearch/select"
+               {:throw-exceptions false
+                :accept           :json
+                :query-params     {:q    (str "g:\"" group "\"")
+                                   :wt   "json"
+                                   :rows 1000}
+                :as               :json})
+          :body
+          :response
+          :docs
+          (filter (comp (partial = "jar") :p))
+          (swap! clis concat))))
+    (keep (partial ->dep :g :a :latestVersion) @clis)))
+
+(defn- print-clis [deps-v]
+  (println "Downloading CLIs:")
+  (mapv (fn [[cli version]]
+          (println \tab cli version))
+    deps-v)
+  deps-v)
+
+(when (seq groups)
+  (some->> (concat
+             (fetch-from-clojars groups)
+             (fetch-from-mvn groups))
+    seq
+    print-clis
+    deps))
+EOF
+	echo "$clj_script" > "$tmpdir/cljog_update.clj"
+	run_script "$tmpdir/cljog_update.clj" "$namespaces"
 }
 
 if test -f "$1";then
@@ -156,8 +223,8 @@ else
 
 	case "$1" in
 		--update|-u)
-			#TODO Download new version of dependencies
-			error_exit "TODO";;
+			log "Updating CLIs for $namespaces"
+			update_clis "$namespaces";;
 		--list|-l)
 			discover_clis
 			list_clis;;
