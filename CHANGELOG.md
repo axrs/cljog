@@ -1,3 +1,8 @@
+# 0.1.1 - Unreleased
+
+Fixed:
+* Added JVM OPT `clojure.spec.skip-macros=true` to improve overall runtime time - Thanks @AndreTheHunter
+
 # 0.1.0
 
 Added:
