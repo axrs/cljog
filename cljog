@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 log() {
 	echo -e "cljog: $1"
 }
@@ -221,6 +222,49 @@ else
 		fi
 	}
 
+	compile_and_run_cli(){
+		local cmd=$1
+		local dep
+		local version
+		for cli in "${!clis[@]}";do
+			if [[ "$cli" == */${cmd} ]];then
+				dep=$cli
+				version="${clis[$cli]}"
+				break
+			fi
+		done
+		if [[ -n "$version" ]];then
+				local cache_dir="$HOME/.cljog-cache/$cmd/$version"
+				local jar_file="$cache_dir/target/$cmd-$version-standalone.jar"
+				if [[ ! -f "$jar_file" ]];then
+					log "Building $cmd:$version for the first time"
+					mkdir -p "$cache_dir/src"
+					cd "$cache_dir"
+					local DEPS="\
+{\
+  :aliases {:cambada {:extra-deps {luchiniatwork/cambada {:mvn/version \"1.0.0\"}}}}\
+  :mvn/repos {\"central\" {:url \"https://repo1.maven.org/maven2/\"}\
+              \"clojars\" {:url \"https://repo.clojars.org/\"}}\
+  :deps {$dep {:mvn/version \"${version}\"}}\
+}"
+					echo "$DEPS" > "$cache_dir/deps.edn"
+					local ns=$(echo $cli | tr / .)
+					echo "(ns wrapper (:require [$ns.core :as cli]) (:gen-class)) (defn -main [& args] (apply cli/-main args))" > "$cache_dir/src/wrapper.clj"
+					clojure $CLJ_OPTS -Sdeps "$DEPS" -R:cambada \
+						-m cambada.uberjar \
+						--deps "$cache_dir/deps.edn" \
+						--app-group-id cljog \
+						--app-artifact-id "$cmd" \
+						--app-version "$version" \
+						--main wrapper
+					cd "$(dirname "$0")"
+				fi
+				java ${CLJ_OPTS//-J/} -jar "$jar_file" "${@:2}"
+		else
+			error_exit "Unable to find cli '$1'. Run 'cljog --list' to see a list of all available commands"
+		fi
+	}
+
 	case "$1" in
 		--update|-u)
 			log "Updating CLIs for $namespaces"
@@ -232,6 +276,6 @@ else
 			log "Run \n\t'cljog --list' to see a list of all available commands\nor\n\t'cljog --update' to search for (and update) available CLIs";;
 		*)
 			discover_clis
-			run_cli "${@:1}";;
+			compile_and_run_cli "${@:1}";;
 	esac
 fi
