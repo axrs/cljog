@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 set -e
+
 log() {
-	echo -e "cljog: $1"
+	echo -e "cljog: $@"
 }
 
 error_exit() {
-	echo "cljog: $1" 1>&2
+	echo "cljog: $@" 1>&2
 	exit 1
 }
+
+define(){ IFS='\n' read -r -d '' ${1} || true; }
 
 [[ "$BASH_VERSION" < "4" ]] && error_exit "Bash version 4+ is required"
 
@@ -23,7 +26,7 @@ run_script(){ # path-to-script.clj & args
 	done
 	args="$args ]"
 
-	read -r -d '' clj_script << EOF
+	define clj_script <<EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
@@ -69,7 +72,7 @@ EOF
 update_clis(){ #namespaces
 	local namespaces=$1
 	local tmpdir=$(dirname $(mktemp -u))
-	read -r -d '' clj_script << EOF
+	define clj_script <<EOF
 (deps '[[clj-http "3.10.0"]
         [cheshire "5.9.0"]])
 
