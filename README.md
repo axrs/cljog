@@ -50,7 +50,7 @@ as a Bash replacement.
 
 ## Installation
 
-1. Download `cljog`. `wget https://raw.githubusercontent.com/axrs/cljog/0.1.0/cljog`
+1. Download `cljog`. `wget https://raw.githubusercontent.com/axrs/cljog/0.1.1/cljog`
 1. Make executable. `chmod +x cljog`
 1. Move to a bin directory. `mv cljog /usr/bin/`
 
