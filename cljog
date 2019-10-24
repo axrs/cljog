@@ -36,7 +36,7 @@ run_script(){ # path-to-script.clj & args
   (defn- classloader-hierarchy []
     (ensure-compiler-loader)
     (let [loader (deref Compiler/LOADER)]
-      (.setContextClassLoader (.. Thread currentThread) loader))
+      (.setContextClassLoader (.. Thread currentThread) loader)
       (->> loader
            (iterate (fn [x] (.getParent ^ClassLoader x)))
            (take-while boolean))))
