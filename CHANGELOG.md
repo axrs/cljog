@@ -1,7 +1,8 @@
-# 0.1.1 - Unreleased
+# 0.1.1
 
 Fixed:
 * Added JVM OPT `clojure.spec.skip-macros=true` to improve overall runtime time - Thanks @AndreTheHunter
+* Clojure `Compiler/LOADER` is set for the current thread resolving unable to find resources issues
 
 # 0.1.0
 
