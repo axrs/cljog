@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
+set -e
 log() {
-	echo -e "cljog: $1"
+	echo -e "cljog: $@"
 }
 
 error_exit() {
-	echo "cljog: $1" 1>&2
+	echo -e "cljog: $@" 1>&2
 	exit 1
 }
+
+define(){ IFS='\n' read -r -d '' ${1} || true; }
 
 [[ "$BASH_VERSION" < "4" ]] && error_exit "Bash version 4+ is required"
 
@@ -22,7 +25,7 @@ run_script(){ # path-to-script.clj & args
 	done
 	args="$args ]"
 
-	read -r -d '' clj_script << EOF
+	define clj_script <<EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
@@ -70,7 +73,7 @@ EOF
 update_clis(){ #namespaces
 	local namespaces=$1
 	local tmpdir=$(dirname $(mktemp -u))
-	read -r -d '' clj_script << EOF
+	define clj_script <<EOF
 (deps '[[clj-http "3.10.0"]
         [cheshire "5.9.0"]])
 
@@ -143,17 +146,17 @@ else
 		sed -e 's/[]\/$*.^[]/\\&/g'
 	}
 
+	cfg_delete() { # key
+		test -f "$config_file" && sed -i.bak "/^$(echo $1 | sed_escape)/d" "$config_file" && rm "${config_file}.bak"
+	}
+
 	cfg_write() { # key, value
-		cfg_delete "$config_file" "$1"
+		cfg_delete "$1"
 		echo "$1=$2" >> "$config_file"
 	}
 
-	cfg_read() { # key -> value
+	cfg_read() { # key
 		test -f "$config_file" && grep "^$(echo "$1" | sed_escape)=" "$config_file" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
-	}
-
-	cfg_delete() { # key
-		test -f "$config_file" && sed -i.bak "/^$(echo $1 | sed_escape).*$/d" "$config_file" && rm "$config_file.bak"
 	}
 
 	cfg_haskey() { # key
@@ -177,12 +180,17 @@ else
 	namespaces=$(cfg_read discovery_namespaces)
 
 	assert_repo_root(){
-		[[ -z "$mvn_home" ]] && error_exit "'repository' config value is not set."
-		[[ ! -d "$local_repo" ]] && error_exit "'repository' directory ($local_repo) not found."
+		if [[ -z "$mvn_home" ]];then
+			error_exit "'repository' config value is not set.\nRun 'cljog --config-set repository /path/to/.m2' to configure."
+		elif [[ ! -d "$local_repo" ]];then
+			error_exit "'repository' directory ($local_repo) not found."
+		fi
 	}
 
 	assert_namespace_config(){
-		[[ -z "$namespaces" ]] && error_exit "'discovery_namespaces' config value is not set."
+		if [[ -z "$namespaces" ]];then
+			error_exit "'discovery_namespaces' config value is not set.\nRun 'cljog --config-set discovery_namespaces your.first.ns,your.second.ns' to configure."
+		fi
 	}
 
 	declare -A clis
@@ -244,7 +252,21 @@ else
 		fi
 	}
 
+	config () {
+		if [[ -n "$1" ]] && [[ -n "$2" ]];then
+			cfg_write "$1" "$2"
+		elif [[ -n "$1" ]];then
+			cfg_delete "$1"
+		fi
+	}
+
 	case "$1" in
+		--config)
+			cat ${config_file};;
+		--config-get)
+			cfg_read "$2";;
+		--config-set)
+			config "${@:2}";;
 		--update|-u)
 			assert_namespace_config
 			log "Updating CLIs for $namespaces"
@@ -253,7 +275,19 @@ else
 			discover_clis
 			list_clis;;
 		"")
-			log "Run \n\t'cljog --list' to see a list of all available commands\nor\n\t'cljog --update' to search for (and update) available CLIs";;
+			define usage <<EOF
+command discovery
+	'cljog --list'                   Prints a list of installed commands
+	'cljog --update'                 Search for, installs, and updates commands matching
+	                                 the configured 'discovery_namespaces' config
+	'cljog cmd [arg1] [arg2] [arg3]' Runs an installed command with provided args
+
+config
+	'cljog --config'                 Print the entire config
+	'cljog --config-set key [value]' Set (or clear) a config value
+	'cljog --config-get key'         Get a config value
+EOF
+			echo -e "$usage";;
 		*)
 			discover_clis
 			run_cli "${@:1}";;
