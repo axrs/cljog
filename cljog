@@ -153,30 +153,49 @@ else
 	}
 
 	cfg_delete() { # key
-		test -f "$config_file" && sed -i "/^$(echo $1 | sed_escape).*$/d" "$config_file"
+		test -f "$config_file" && sed -i.bak "/^$(echo $1 | sed_escape).*$/d" "$config_file" && rm "$config_file.bak"
 	}
 
 	cfg_haskey() { # key
 		test -f "$config_file" && grep "^$(echo "$1" | sed_escape)=" "$config_file" > /dev/null
 	}
 
-	repo_root=$(cfg_read repository)
-	[[ -z "$repo_root" ]] && error_exit "'repository' config value not found."
+	if [[ ! -f "$config_file" ]];then
+		log "Initialising config file: $config_file"
+		touch "$config_file"
+		cfg_write discovery_namespaces ""
+		if hash mvn 2>/dev/null;then
+			repo_path=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
+			cfg_write repository "$(dirname $repo_path)"
+		else
+			cfg_write repository ""
+		fi
+	fi
 
+	mvn_home=$(cfg_read repository)
+	local_repo="$mvn_home/repository"
 	namespaces=$(cfg_read discovery_namespaces)
-	[[ -z "$namespaces" ]] && error_exit "'discovery_namespaces' config value not found."
 
-	repo_dir="$repo_root/repository"
-	repo_dir_str_length=$((${#repo_dir} + 1))
+	assert_repo_root(){
+		[[ -z "$mvn_home" ]] && error_exit "'repository' config value is not set."
+		[[ ! -d "$local_repo" ]] && error_exit "'repository' directory ($local_repo) not found."
+	}
+
+	assert_namespace_config(){
+		[[ -z "$namespaces" ]] && error_exit "'discovery_namespaces' config value is not set."
+	}
 
 	declare -A clis
 
 	discover_clis() {
+		assert_repo_root
+		assert_namespace_config
 		namespaces=(${namespaces//,/ })
 		for i in ${!namespaces[@]};do
-			namespaces[$i]="${repo_dir}/${namespaces[$i]//./\/}"
+			namespaces[$i]="${local_repo}/${namespaces[$i]//./\/}"
 		done
 		local artifacts=$(find ${namespaces[@]} -name *.jar 2>/dev/null | tac)
+		local repo_dir_str_length=$((${#local_repo} + 1))
 		for artifact in ${artifacts};do
 			local artifact="${artifact:$repo_dir_str_length}"
 			local groupId=$(echo "$artifact" | rev | cut -d/ -f4- | rev | tr / .)
@@ -191,11 +210,11 @@ else
 	}
 
 	list_clis() {
-		echo "Local Commands in: $repo_dir"
+		echo "Local Commands in: $local_repo"
 		for dep in "${!clis[@]}";do
 			local artifact=$(echo "$dep" | awk -F/ '{print $NF}')
 			local version="${clis[$dep]}"
-			local pom="$repo_dir/$(echo "$dep" | tr . /)/$version/*$version.pom"
+			local pom="$local_repo/$(echo "$dep" | tr . /)/$version/*$version.pom"
 			pom=$(realpath ${pom})
 			local groupId=$(echo ${dep} | cut -d/ -f1)
 			if test -f "$pom";then
@@ -225,6 +244,7 @@ else
 
 	case "$1" in
 		--update|-u)
+			assert_namespace_config
 			log "Updating CLIs for $namespaces"
 			update_clis "$namespaces";;
 		--list|-l)
