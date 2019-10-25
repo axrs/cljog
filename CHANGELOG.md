@@ -1,3 +1,15 @@
+# 0.2.0
+
+Added:
+* Auto discovery and set of local repository when the config file doesn't exist and mvn is installed
+* Config set, read, and print options
+* Extended usage help to be more helpful
+* Version flag
+
+Fixed:
+* Removed dependency on `tput` which may not be installed by default
+* Check for installed `column` command before invoking when displaying installed commands
+
 # 0.1.1
 
 Fixed:
