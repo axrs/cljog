@@ -210,7 +210,9 @@ else
 	}
 
 	list_clis() {
+		hash column 2>/dev/null || error_exit "'column' command not found."
 		echo "Local Commands in: $local_repo"
+		local tty_width=$(stty size | awk '{print $2}')
 		for dep in "${!clis[@]}";do
 			local artifact=$(echo "$dep" | awk -F/ '{print $NF}')
 			local version="${clis[$dep]}"
@@ -220,7 +222,7 @@ else
 			if test -f "$pom";then
 				echo -e "    $artifact\t$groupId\t$version\t$(awk -F '[<>]' '/description/{print $3}' "$pom")"
 			fi
-		done | column -ts $'\t' | sort | cut -b -$(tput cols)
+		done | column -ts $'\t' | sort | cut -b -${tty_width}
 	}
 
 	run_cli(){
