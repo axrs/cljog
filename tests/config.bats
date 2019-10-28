@@ -12,6 +12,7 @@ setup () {
 	[[ " ${lines[@]} " =~ " print-key=find-this-in-catted-config " ]]
 
 	run ./cljog --config-set print-key
+
 	run ./cljog --config
 	[[ "$status" -eq 0 ]]
 	[[ ! " ${lines[@]} " =~ " print-key=find-this-in-catted-config " ]]

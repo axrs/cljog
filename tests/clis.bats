@@ -20,6 +20,7 @@ install_example_cli () {
 	run ./cljog --list
 	[[ "$status" -eq 0 ]]
 	[[ "${lines[0]}" == "Local Commands in: $repository/repository" ]]
+
 	run array_contains 'Example CLI' "${lines[@]}"
 	[[ "$status" -eq 1 ]]
 }
@@ -27,9 +28,11 @@ install_example_cli () {
 @test "list does include clis currently installed" {
 	install_example_cli
 	repository=$(./cljog --config-get repository)
+
 	run ./cljog --list
 	[[ "$status" -eq 0 ]]
 	[[ "${lines[0]}" == "Local Commands in: $repository/repository" ]]
+
 	run array_contains 'Example CLI' "${lines[@]}"
 	[[ "$status" -eq 0 ]]
 }
@@ -37,7 +40,6 @@ install_example_cli () {
 @test "locally installed cli can be invoked with forwarded args" {
 	install_example_cli
 	run ./cljog example first-arg second-arg "third arg is a string"
-	echo "${lines[@]}"
 	[[ "$status" -eq 0 ]]
 	[[ "${lines[0]}" == "Hello! from the example lib" ]]
 	[[ "${lines[1]}" == "Clojure version: {:major 1"* ]]

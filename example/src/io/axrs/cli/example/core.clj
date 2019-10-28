@@ -1,6 +1,5 @@
 (ns io.axrs.cli.example.core
   (:require
-    [clojure.pprint]
     [io.jesi.backpack.random :as rnd]))
 
 (defn -main [& args]
