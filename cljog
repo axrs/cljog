@@ -52,7 +52,7 @@ run_script(){ # path-to-script.clj & args
       :coordinates m
       :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"})))
 
-  (def ^:dynamic *cmdjure-version* "$VERSION")
+  (def ^:dynamic *cljog-version* "$VERSION")
   (def ^:dynamic *cwd* (System/getProperty "user.dir"))
   (def ^:dynamic *script* "$1")
 
@@ -262,6 +262,7 @@ else
 
 	case "$1" in
 		--config)
+			log "${config_file}\n"
 			cat ${config_file};;
 		--config-get)
 			cfg_read "$2";;
@@ -276,7 +277,7 @@ else
 			list_clis;;
 		--version)
 			echo "$VERSION";;
-		"")
+		""|--help)
 			define usage <<EOF
 command discovery
 	'cljog --list'                   Prints a list of installed commands
