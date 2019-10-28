@@ -277,7 +277,7 @@ else
 			list_clis;;
 		--version)
 			echo "$VERSION";;
-		"")
+		""|--help)
 			define usage <<EOF
 command discovery
 	'cljog --list'                   Prints a list of installed commands

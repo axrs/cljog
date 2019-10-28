@@ -8,7 +8,7 @@ setup () {
 @test "can print the current config, including file location" {
 	run ./cljog --config
 	[[ "$status" -eq 0 ]]
-	[[ "cljog: $HOME/.cljog" = "${lines[0]}" ]]
+	[[ "${lines[0]}" == "cljog: $HOME/.cljog" ]]
 	[[ " ${lines[@]} " =~ " print-key=find-this-in-catted-config " ]]
 
 	run ./cljog --config-set print-key
@@ -28,7 +28,7 @@ setup () {
 
 	run cljog --config-get test-key
 	[[ "$status" -eq 0 ]]
-	[[ "a-new-value" = "${lines[0]}" ]]
+	[[ "${lines[0]}" == "a-new-value" ]]
 
 	run cljog --config-set test-key
 	[[ "$status" -eq 0 ]]
