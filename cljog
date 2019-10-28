@@ -262,6 +262,7 @@ else
 
 	case "$1" in
 		--config)
+			log "${config_file}\n"
 			cat ${config_file};;
 		--config-get)
 			cfg_read "$2";;
