@@ -52,7 +52,7 @@ run_script(){ # path-to-script.clj & args
       :coordinates m
       :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"})))
 
-  (def ^:dynamic *cmdjure-version* "$VERSION")
+  (def ^:dynamic *cljog-version* "$VERSION")
   (def ^:dynamic *cwd* (System/getProperty "user.dir"))
   (def ^:dynamic *script* "$1")
 

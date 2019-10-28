@@ -6,6 +6,6 @@
 (println "Script:" *script*)
 (println "Current working dir:" *cwd*)
 (println "Clojure version:" *clojure-version*)
-(println "cljog version:" *cmdjure-version*)
+(println "cljog version:" *cljog-version*)
 (println "Command line args:" *command-line-args*)
 (println "Random string:" (rnd/alpha-numeric))
