@@ -16,7 +16,7 @@ define(){ IFS='\n' read -r -d '' ${1} || true; }
 hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
 
 CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client -J-XX:MaxMetaspaceSize=100m -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled -J-Xverify:none -J-Dclojure.spec.skip-macros=true'
-VERSION=0.2.0
+VERSION=0.2.1
 
 run_script(){ # path-to-script.clj & args
 	local args='['

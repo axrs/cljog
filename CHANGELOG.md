@@ -1,3 +1,8 @@
+# 0.2.1
+
+Fixed:
+* Running CLIs including CWD `src` paths
+
 # 0.2.0
 
 Added:
