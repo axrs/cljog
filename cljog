@@ -244,7 +244,7 @@ else
 			fi
 		done
 		if [[ -n "$version" ]];then
-				local DEPS="{:deps {$dep {:mvn/version \"${version}\"}}}"
+				local DEPS="{:paths [] :deps {$dep {:mvn/version \"${version}\"}}}"
 				local ns=$(echo $cli | tr / .)
 				exec clojure $CLJ_OPTS -Sdeps "$DEPS" -m ${ns}.core "${@:2}"
 		else
