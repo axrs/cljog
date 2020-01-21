@@ -1,3 +1,11 @@
+# 0.3.0
+
+Added:
+* Ability to load dependencies on script launch. [Example](./example-scripts/launch_deps.clj)
+
+Fixed:
+* Unit Tests
+
 # 0.2.1
 
 Fixed:
