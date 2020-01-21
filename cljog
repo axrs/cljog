@@ -17,6 +17,7 @@ hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://c
 
 CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client -J-XX:MaxMetaspaceSize=100m -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled -J-Xverify:none -J-Dclojure.spec.skip-macros=true'
 VERSION=0.2.1
+LAUNCH_DEPS=''
 
 run_script(){ # path-to-script.clj & args
 	local args='['
@@ -61,12 +62,16 @@ run_script(){ # path-to-script.clj & args
   nil)
 EOF
 
+	if [[ ! -z ${LAUNCH_DEPS} ]];then
+		echo "Running $1 with extra dependencies: $LAUNCH_DEPS"
+	fi
 	#language=clj
-	local DEPS='
-  {:deps          {com.cemerick/pomegranate {:mvn/version "1.1.0" :exclusions [commons-logging]}
-                   org.slf4j/slf4j-nop      {:mvn/version "1.7.22"}}
-   :override-deps {org.slf4j/slf4j-api      {:mvn/version "1.7.22"}
-                   org.slf4j/jcl-over-slf4j {:mvn/version "1.7.22"}}}'
+	local DEPS="
+  {:deps          {com.cemerick/pomegranate {:mvn/version \"1.1.0\" :exclusions [commons-logging]}
+                   $LAUNCH_DEPS
+                   org.slf4j/slf4j-nop      {:mvn/version \"1.7.22\"}}
+   :override-deps {org.slf4j/slf4j-api      {:mvn/version \"1.7.22\"}
+                   org.slf4j/jcl-over-slf4j {:mvn/version \"1.7.22\"}}}"
   exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
 }
 
@@ -261,6 +266,11 @@ else
 	}
 
 	case "$1" in
+		--launch-deps)
+			len=${#@}
+			LAUNCH_DEPS="${@:2:$len-2}"
+			file="${@:$len}"
+			run_script "$file";;
 		--config)
 			log "${config_file}\n"
 			cat ${config_file};;
