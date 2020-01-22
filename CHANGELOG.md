@@ -1,3 +1,8 @@
+# 0.3.1
+
+Fixed:
+* Passing extra args to scripts using `--launch-deps`
+
 # 0.3.0
 
 Added:

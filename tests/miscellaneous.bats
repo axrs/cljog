@@ -33,7 +33,7 @@ assert_help () {
 @test "prints the current version" {
 	run ./cljog --version
 	[[ "$status" -eq 0 ]]
-	[[ "${lines[0]}" == "0.3.0" ]]
+	[[ "${lines[0]}" == "0.3.1" ]]
 }
 
 @test "prints help if given no args" {
