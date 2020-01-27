@@ -1,3 +1,9 @@
+# 0.3.2
+
+Fixed:
+* Passing `--launch-deps` extra args when running under environments using split-string processing by allowing 
+  `\"` to escape quotes
+
 # 0.3.1
 
 Fixed:

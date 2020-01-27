@@ -7,7 +7,7 @@
 	[[ "${lines[1]}" == "Script: example-scripts/echo.clj" ]]
 	[[ "${lines[2]}" == "Current working dir: /Users/xander/Projects/cljog" ]]
 	[[ "${lines[3]}" == "Clojure version: {:major 1,"* ]]
-	[[ "${lines[4]}" == "cljog version: 0.3.1" ]]
+	[[ "${lines[4]}" == "cljog version: 0.3.2" ]]
 	[[ "${lines[5]}" == "Command line args: [first-arg second-arg third arg is a string]" ]]
 	[[ "${lines[6]}" == "Random string:"* ]]
 }
