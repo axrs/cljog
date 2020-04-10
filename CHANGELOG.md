@@ -3,6 +3,9 @@
 Added:
 * *script-dir* for current running script
 
+Fixed:
+* No longer attempts to create or use config file if not required
+
 # 0.3.2
 
 Fixed:
