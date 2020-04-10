@@ -5,11 +5,12 @@
 	[[ "$status" -eq 0 ]]
 	[[ "${lines[0]}" == "Hello! from the other side" ]]
 	[[ "${lines[1]}" == "Script: example-scripts/echo.clj" ]]
-	[[ "${lines[2]}" == "Current working dir: /Users/xander/Projects/cljog" ]]
-	[[ "${lines[3]}" == "Clojure version: {:major 1,"* ]]
-	[[ "${lines[4]}" == "cljog version: 0.3.2" ]]
-	[[ "${lines[5]}" == "Command line args: [first-arg second-arg third arg is a string]" ]]
-	[[ "${lines[6]}" == "Random string:"* ]]
+	[[ "${lines[2]}" == "Script dir: $(pwd)/example-scripts" ]]
+	[[ "${lines[3]}" == "Current working dir: $(pwd)" ]]
+	[[ "${lines[4]}" == "Clojure version: {:major 1,"* ]]
+	[[ "${lines[5]}" == "cljog version: 0.4.0" ]]
+	[[ "${lines[6]}" == "Command line args: [first-arg second-arg third arg is a string]" ]]
+	[[ "${lines[7]}" == "Random string:"* ]]
 }
 
 @test "scripts that throw uncaught exceptions have a non-zero exit code" {

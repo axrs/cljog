@@ -2,7 +2,9 @@
 source ./tests/util.sh
 
 setup () {
-	mvn -q dependency:purge-local-repository -DmanualInclude="io.axrs.cli:example"
+	mvn -q org.apache.maven.plugins:maven-dependency-plugin:3.0.0:purge-local-repository -DmanualInclude="io.axrs.cli:example"
+	discovery_namespaces_bak="$(./cljog --config-get discovery_namespaces)"
+	run ./cljog --config-set discovery_namespaces io.axrs.cli
 }
 
 install_example_cli () {
@@ -49,5 +51,6 @@ install_example_cli () {
 }
 
 teardown() {
-	mvn -q dependency:purge-local-repository -DmanualInclude="io.axrs.cli:example"
+	run ./cljog --config-set discovery_namespaces "$discovery_namespaces_bak"
+	mvn -q org.apache.maven.plugins:maven-dependency-plugin:3.0.0:purge-local-repository -DmanualInclude="io.axrs.cli:example"
 }

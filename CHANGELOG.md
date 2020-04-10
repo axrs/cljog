@@ -1,3 +1,8 @@
+# 0.4.0
+
+Added:
+* *script-dir* for current running script
+
 # 0.3.2
 
 Fixed:

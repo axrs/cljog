@@ -4,6 +4,7 @@
 
 (println "Hello! from the other side")
 (println "Script:" *script*)
+(println "Script dir:" *script-dir*)
 (println "Current working dir:" *cwd*)
 (println "Clojure version:" *clojure-version*)
 (println "cljog version:" *cljog-version*)
