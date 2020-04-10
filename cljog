@@ -171,21 +171,30 @@ else
 		test -f "$config_file" && grep "^$(echo "$1" | sed_escape)=" "$config_file" > /dev/null
 	}
 
-	if [[ ! -f "$config_file" ]];then
-		log "Initialising config file: $config_file"
-		touch "$config_file"
-		cfg_write discovery_namespaces ""
-		if hash mvn 2>/dev/null;then
-			repo_path=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
-			cfg_write repository "$(dirname $repo_path)"
-		else
-			cfg_write repository ""
+	initialise_config() {
+		if [[ ! -f "$config_file" ]];then
+			log "Initialising config file: $config_file"
+			touch "$config_file"
+			cfg_write discovery_namespaces ""
+			if hash mvn 2>/dev/null;then
+				repo_path=$(mvn help:evaluate -Dexpression=settings.localRepository -q -DforceStdout)
+				cfg_write repository "$(dirname $repo_path)"
+			else
+				cfg_write repository ""
+			fi
 		fi
-	fi
+	}
 
-	mvn_home=$(cfg_read repository)
-	local_repo="$mvn_home/repository"
-	namespaces=$(cfg_read discovery_namespaces)
+	mvn_home=""
+	local_repo=""
+	namespaces=""
+
+	load_config_vars() {
+		initialise_config
+		mvn_home=$(cfg_read repository)
+		local_repo="$mvn_home/repository"
+		namespaces=$(cfg_read discovery_namespaces)
+	}
 
 	assert_repo_root(){
 		if [[ -z "$mvn_home" ]];then
@@ -204,6 +213,7 @@ else
 	declare -A clis
 
 	discover_clis() {
+		load_config_vars
 		assert_repo_root
 		assert_namespace_config
 		namespaces=(${namespaces//,/ })
@@ -226,6 +236,7 @@ else
 	}
 
 	list_clis() {
+		load_config_vars
 		hash column 2>/dev/null || error_exit "'column' command not found."
 		echo "Local Commands in: $local_repo"
 		local tty_width=$(stty size | awk '{print $2}')
@@ -290,6 +301,7 @@ else
 		--config-set)
 			config "${@:2}";;
 		--update|-u)
+			load_config_vars
 			assert_namespace_config
 			log "Updating CLIs for $namespaces"
 			update_clis "$namespaces";;
