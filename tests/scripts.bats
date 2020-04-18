@@ -20,11 +20,16 @@ load util
 	[[ "$status" -eq 1 ]]
 }
 
-@test "scripts with --launch-deps have dependencies available" {
-	run example-scripts/launch_deps.clj "Extra Arg"
+@test "scripts with --deps load an additional `deps.edn` file from the script directory" {
+	run example-scripts/deps.clj "Extra Arg"
 	[[ "$status" -eq 0 ]]
 
-	array_contains 'Running example-scripts/launch_deps.clj with extra dependencies:' "${lines[@]}"
-	array_contains 'io.jesi/backpack {:mvn/version "4.2.1"}' "${lines[@]}"
-	array_contains 'Extra Arg' "${lines[@]}"
+	array_contains 'This script was run with additional deps provided by deps.edn' "${lines[@]}"
+}
+
+@test "scripts with --deps=deps_file.edn load then additional `deps_file.edn` file from the script directory" {
+	run example-scripts/deps_file.clj "Extra Arg"
+	[[ "$status" -eq 0 ]]
+
+	array_contains 'This script was run with additional deps provided by deps_file.edn' "${lines[@]}"
 }

@@ -16,8 +16,8 @@ define(){ IFS='\n' read -r -d '' ${1} || true; }
 hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
 
 CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client -J-XX:MaxMetaspaceSize=100m -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled -J-Xverify:none -J-Dclojure.spec.skip-macros=true'
-VERSION=0.4.1
-LAUNCH_DEPS=''
+VERSION=0.5.0
+USER_DEPS='{:deps {}}}'
 
 abs_path() {
 	local file
@@ -32,6 +32,43 @@ abs_path() {
 	local dir
 	dir="$(pwd -P)"
 	echo "$dir/$file"
+}
+
+read_deps_edn() {
+	local script_dir="$(dirname "$(abs_path "$1")")"
+	local file
+	file="$2"
+	local deps_file="$script_dir/$file"
+	if [[ ! -f "$deps_file" ]];then
+		error_exit "Unable to resolve '$file' at '$script_dir' while loading dependencies"
+	fi
+	USER_DEPS=$(<"$deps_file")
+}
+
+insert_pomegranate() {
+	local deps
+	deps="$1"
+	local d='com.cemerick\/pomegranate {:mvn\/version "1.1.0" :exclusions \[commons-logging\]}'
+	local deps_started=0
+	local replaced=0
+	local lines=""
+	while read -r line;do
+		if [[ "$replaced" -eq 0 ]]; then
+		    # Deps key and open brace on single line
+			if echo "$line" | grep -q ":deps\s*{";then
+				line=$(echo "$line" | sed -E "s/:deps[[:space:]]*{/:deps {${d} /g")
+				replaced=1
+		    # Deps key on own line
+			elif echo "$line" | grep -q ":deps";then
+				deps_started=1
+		    # Deps key matched and first open brace
+			elif [[ "$deps_started" -eq 1 ]] && [[ "$line" = {* ]];then
+				line=$(echo "$line" | sed -E "s/^{/{${d} /g")
+			fi
+		fi
+		lines="${lines}\n${line}"
+	done <<< "$deps"
+	echo -e ${lines}
 }
 
 run_script(){ # path-to-script.clj & args
@@ -78,19 +115,9 @@ run_script(){ # path-to-script.clj & args
     (load-file *script*))
   nil)
 EOF
-
-	if [[ ! -z ${LAUNCH_DEPS} ]];then
-		LAUNCH_DEPS=$(echo "$LAUNCH_DEPS" | sed 's/\\"/\"/g')
-		echo "Running $1 with extra dependencies:$LAUNCH_DEPS"
-	fi
 	#language=clj
-	local DEPS="
-  {:deps          {com.cemerick/pomegranate {:mvn/version \"1.1.0\" :exclusions [commons-logging]}
-                   $LAUNCH_DEPS
-                   org.slf4j/slf4j-nop      {:mvn/version \"1.7.22\"}}
-   :override-deps {org.slf4j/slf4j-api      {:mvn/version \"1.7.22\"}
-                   org.slf4j/jcl-over-slf4j {:mvn/version \"1.7.22\"}}}"
-  exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
+	local DEPS=$(insert_pomegranate "$USER_DEPS")
+	exec clojure $CLJ_OPTS -Sdeps "$DEPS" -e "$clj_script"
 }
 
 update_clis(){ #namespaces
@@ -294,20 +321,26 @@ else
 		fi
 	}
 
+	run_script_with_deps() {
+		local deps_file
+		deps_file="$1"
+		local script_file
+		script_file="$2"
+		shift
+		local root_dir
+		root_dir=$(abs_path "script_file")
+		read_deps_edn "$script_file" "$deps_file"
+		run_script "$@"
+	}
+
 	case "$1" in
-		--launch-deps)
-			len=${#@}
-			file=""
-			while [[ -z "$file" ]];do
-				arg="$2"
-				if [[ -f "$arg" ]];then
-					file="$arg"
-				else
-					LAUNCH_DEPS="$LAUNCH_DEPS $arg"
-				fi
-				shift
-			done
-			run_script "$@";;
+		--deps)
+			shift
+			run_script_with_deps "deps.edn" "$@";;
+		*"--deps="*)
+			deps_file=$(cut -d "=" -f2- <<< "$1")
+			shift
+			run_script_with_deps "$deps_file" "$@";;
 		--config)
 			log "${config_file}\n"
 			cat ${config_file};;

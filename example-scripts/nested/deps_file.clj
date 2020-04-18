@@ -1,4 +1,4 @@
-#!/usr/bin/env cljog --launch-deps io.jesi/backpack {:mvn/version "4.2.1"}
+#!/usr/bin/env cljog --deps=../deps_file.edn
 (require '[io.jesi.backpack.random :as rnd])
 (println (rnd/uuid-str))
 (println (first *command-line-args*))

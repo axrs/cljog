@@ -3,4 +3,4 @@
   :license "Eclipse Public License - v 2.0"
   :url "https://github.com/axrs/cljog"
   :dependencies [[org.clojure/clojure "1.10.1"]
-                 [io.jesi/backpack "3.3.1"]])
+                 [io.jesi/backpack "5.1.0"]])

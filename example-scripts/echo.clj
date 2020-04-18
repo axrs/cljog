@@ -1,5 +1,5 @@
 #!/usr/bin/env cljog
-(deps '[[io.jesi/backpack "3.3.0"]])
+(deps '[[io.jesi/backpack "5.1.0"]])
 (require '[io.jesi.backpack.random :as rnd])
 
 (println "Hello! from the other side")
