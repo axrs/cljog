@@ -3,9 +3,13 @@
 Added:
 * `--deps` flag for loading `deps.edn` (within the script directory) at launch
 * `--deps=file.edn` flag for loading `file.edn` (relative to the script directory) at launch
+* `deps` function support for loading `deps.edn` formatted files with `java.io.File` or absolute path string
 
 Removed:
 * `--launch-deps` in favour of `--deps`
+
+Misc:
+* Upgraded `Pomegranate` to `1.2.0`
 
 # 0.4.1
 
