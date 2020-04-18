@@ -16,8 +16,23 @@ define(){ IFS='\n' read -r -d '' ${1} || true; }
 hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
 
 CLJ_OPTS='-J-Xms256m -J-Xmx256m -J-client -J-XX:MaxMetaspaceSize=100m -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1 -J-XX:+UseConcMarkSweepGC -J-XX:+CMSClassUnloadingEnabled -J-Xverify:none -J-Dclojure.spec.skip-macros=true'
-VERSION=0.4.0
+VERSION=0.4.1
 LAUNCH_DEPS=''
+
+abs_path() {
+	local file
+	file="$1"
+	cd $(dirname "$file")
+	file=$(basename "$file")
+	while [[ -L "$file" ]];do
+		file="$(readlink "$file")"
+		cd "$(dirname "$file")"
+		file="$(basename "$file")"
+	done
+	local dir
+	dir="$(pwd -P)"
+	echo "$dir/$file"
+}
 
 run_script(){ # path-to-script.clj & args
 	local args='['
@@ -25,7 +40,7 @@ run_script(){ # path-to-script.clj & args
 		args="$args \"$arg\""
 	done
 	args="$args ]"
-	local script_dir=$(dirname "$(readlink -f "$1")")
+	local script_dir="$(dirname "$(abs_path "$1")")"
 
 	define clj_script <<EOF
 ;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:

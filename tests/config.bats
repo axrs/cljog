@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+load util
 
 setup () {
 	./cljog --config-set print-key find-this-in-catted-config
@@ -8,14 +9,17 @@ setup () {
 @test "can print the current config, including file location" {
 	run ./cljog --config
 	[[ "$status" -eq 0 ]]
-	[[ "${lines[0]}" == "cljog: $HOME/.cljog" ]]
-	[[ " ${lines[@]} " =~ " print-key=find-this-in-catted-config " ]]
+
+	array_contains "cljog: $HOME/.cljog" "${lines[@]}"
+	array_contains 'print-key=find-this-in-catted-config' "${lines[@]}"
 
 	run ./cljog --config-set print-key
+	[[ "$status" -eq 0 ]]
 
 	run ./cljog --config
 	[[ "$status" -eq 0 ]]
-	[[ ! " ${lines[@]} " =~ " print-key=find-this-in-catted-config " ]]
+
+	! array_contains 'print-key=find-this-in-catted-config' "${lines[@]}"
 }
 
 @test "can get, set and clear a config option" {
@@ -29,7 +33,7 @@ setup () {
 
 	run cljog --config-get test-key
 	[[ "$status" -eq 0 ]]
-	[[ "${lines[0]}" == "a-new-value" ]]
+	array_contains 'a-new-value' "${lines[@]}"
 
 	run cljog --config-set test-key
 	[[ "$status" -eq 0 ]]

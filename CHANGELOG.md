@@ -1,3 +1,8 @@
+# 0.4.1
+
+Fixed:
+* masOS compatible readlink without 3rd party. Resolves #32
+
 # 0.4.0
 
 Added:
