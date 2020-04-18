@@ -84,7 +84,10 @@ run_script(){ # path-to-script.clj & args
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
 (do
-  (require '[dynapath.util])
+  (require '[dynapath.util]
+           '[clojure.edn]
+           '[clojure.java.io])
+  (import '(java.io File))
 
   (defn- ensure-compiler-loader []
     (when-not (bound? Compiler/LOADER)
@@ -101,10 +104,23 @@ run_script(){ # path-to-script.clj & args
   (require '[cemerick.pomegranate])
 
   (defn deps [m]
-    (cemerick.pomegranate/add-dependencies
-      :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
-      :coordinates m
-      :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"})))
+    (cond
+      (string? m) (deps (clojure.java.io/as-file m))
+      (instance? java.io.File m) (if-not (.exists ^java.io.File m)
+                                   (throw (Exception. "Deps file not found"))
+                                   (->> m
+                                        str
+                                        slurp
+                                        clojure.edn/read-string
+                                        :deps
+                                        (mapv (fn [[dep v]]
+                                                [dep (:mvn/version v) :exclusions (:exclusions v)]))
+                                        deps))
+      (vector? m) (cemerick.pomegranate/add-dependencies
+                    :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+                    :coordinates m
+                    :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"}))
+      :else (throw (Exception. "Unknown deps format"))))
 
   (def ^:dynamic *cljog-version* "$VERSION")
   (def ^:dynamic *cwd* (System/getProperty "user.dir"))

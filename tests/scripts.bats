@@ -20,16 +20,30 @@ load util
 	array_contains 'Random string:' "${lines[@]}"
 }
 
-@test "scripts with --deps load an additional `deps.edn` file from the script directory" {
+@test "scripts with --deps load an additional 'deps.edn' file from the script directory" {
 	run example-scripts/deps.clj "Extra Arg"
 	[[ "$status" -eq 0 ]]
 
 	array_contains 'This script was run with additional deps provided by deps.edn' "${lines[@]}"
 }
 
-@test "scripts with --deps=deps_file.edn load then additional `deps_file.edn` file from the script directory" {
+@test "scripts with --deps=deps_file.edn load then additional 'deps_file.edn' file from the script directory" {
 	run example-scripts/deps_file.clj "Extra Arg"
 	[[ "$status" -eq 0 ]]
 
 	array_contains 'This script was run with additional deps provided by deps_file.edn' "${lines[@]}"
+}
+
+@test "scripts with --deps=../deps_file.edn load then additional 'deps_file.edn' file from a relative directory" {
+	run example-scripts/nested/deps_file.clj "Extra Arg"
+	[[ "$status" -eq 0 ]]
+
+	array_contains 'This script was run with additional deps provided by relative ../deps_file.edn' "${lines[@]}"
+}
+
+@test "the deps command can load a dependency file during runtime" {
+	run example-scripts/runtime_deps_file.clj "Extra Arg"
+	[[ "$status" -eq 0 ]]
+
+	array_contains 'This script was run with additional deps loaded at runtime' "${lines[@]}"
 }
