@@ -1,6 +1,11 @@
 #!/usr/bin/env bats
 load util
 
+@test "scripts that throw uncaught exceptions have a non-zero exit code" {
+	run example-scripts/exception.clj
+	[[ "$status" -eq 1 ]]
+}
+
 @test "can run scripts that include dependencies" {
 	run example-scripts/echo.clj first-arg second-arg "third arg is a string"
 	[[ "$status" -eq 0 ]]
@@ -9,15 +14,10 @@ load util
 	array_contains 'Script: example-scripts/echo.clj' "${lines[@]}"
 	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
 	array_contains "Current working dir: $(pwd)" "${lines[@]}"
-	array_contains 'cljog version: 0.4.1' "${lines[@]}"
+	array_contains 'cljog version: 1.0.0' "${lines[@]}"
 	array_contains 'Clojure version: {:major 1,' "${lines[@]}"
 	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"
-}
-
-@test "scripts that throw uncaught exceptions have a non-zero exit code" {
-	run example-scripts/exception.clj
-	[[ "$status" -eq 1 ]]
 }
 
 @test "scripts with --deps load an additional `deps.edn` file from the script directory" {
