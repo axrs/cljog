@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: axrs/cljog-ci:1.0
+    steps:
+      - checkout
+      - run: ./test.sh
+workflows:
+  version: 2
+  test_workflow:
+    jobs:
+      - test
