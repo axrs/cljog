@@ -116,10 +116,10 @@ run_script(){ # path-to-script.clj & args
                                         (mapv (fn [[dep v]]
                                                 [dep (:mvn/version v) :exclusions (:exclusions v)]))
                                         deps))
-      (vector? m) (cemerick.pomegranate/add-dependencies
-                    :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
-                    :coordinates m
-                    :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"}))
+      (and (coll? m) (not (map? m))) (cemerick.pomegranate/add-dependencies
+                                       :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+                                       :coordinates m
+                                       :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"}))
       :else (throw (Exception. "Unknown deps format"))))
 
   (def ^:dynamic *cljog-version* "$VERSION")
@@ -295,9 +295,9 @@ EOF
 
 	list_clis() {
 		load_config_vars
-		hash column 2>/dev/null || error_exit "'column' command not found."
 		echo "Local Commands in: $local_repo"
 		local tty_width=$(stty size | awk '{print $2}')
+		local lines=""
 		for dep in "${!clis[@]}";do
 			local artifact=$(echo "$dep" | awk -F/ '{print $NF}')
 			local version="${clis[$dep]}"
@@ -305,9 +305,11 @@ EOF
 			pom=$(realpath ${pom})
 			local groupId=$(echo ${dep} | cut -d/ -f1)
 			if test -f "$pom";then
-				echo -e "    $artifact\t$groupId\t$version\t$(awk -F '[<>]' '/description/{print $3}' "$pom")"
+			    local description=$(awk -F '[<>]' '/description/{print $3}' "$pom")
+			    lines="${lines}\n$artifact\t$groupId\t$version\t$description"
 			fi
-		done | column -ts $'\t' | sort | cut -b -${tty_width}
+		done
+		echo -e "$lines" | awk -vOFS='\t' 'NF < 3 { $1 = $1 } 1' | sort | cut -b -${tty_width}
 	}
 
 	run_cli(){

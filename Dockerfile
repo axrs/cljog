@@ -4,7 +4,7 @@ ENV CLJ_TOOLS_VERSION=1.10.1.536 \
     LEIN_INSTALL=/usr/local/bin/ \
     LEIN_VERSION=2.9.2
 
-RUN apk add bash curl git maven column
+RUN apk add bash curl git maven
 
 #--- Clojure-Tools
 # https://clojure.org/guides/getting_started#_installation_on_linux
