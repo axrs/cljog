@@ -10,6 +10,7 @@ Removed:
 
 Misc:
 * Upgraded `Pomegranate` to `1.2.0`
+* Added CI support and extended test suite
 
 # 0.4.1
 
