@@ -220,7 +220,9 @@ EOF
 	}
 
 	cfg_read() { # key
-		test -f "$config_file" && grep "^$(echo "$1" | sed_escape)=" "$config_file" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
+		if [[ -f "$config_file" ]];then
+			grep "^$(echo "$1" | sed_escape)=" "$config_file" | sed "s/^$(echo "$1" | sed_escape)=//" | tail -1
+		fi
 	}
 
 	cfg_haskey() { # key
@@ -328,6 +330,7 @@ EOF
 	}
 
 	config () {
+		initialise_config
 		if [[ -n "$1" ]] && [[ -n "$2" ]];then
 			cfg_write "$1" "$2"
 		elif [[ -n "$1" ]];then

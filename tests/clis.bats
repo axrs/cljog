@@ -14,15 +14,14 @@ install_example_cli () {
 @test "invalid or missing clis exit with non-zero code" {
 	run ./cljog example
 	[[ "$status" -eq 1 ]]
-	[[ "${lines[0]}" == "cljog: Unable to find cli 'example'. Run 'cljog --list' to see a list of all available commands" ]]
+	array_contains "cljog: Unable to find cli 'example'. Run 'cljog --list' to see a list of all available commands" "${lines[@]}"
 }
 
 @test "list doesn't include clis not installed" {
 	repository=$(./cljog --config-get repository)
 	run ./cljog --list
 	[[ "$status" -eq 0 ]]
-	[[ "${lines[0]}" == "Local Commands in: $repository/repository" ]]
-
+	array_contains "Local Commands in: $repository/repository" "${lines[@]}"
 	! array_contains 'Example CLI' "${lines[@]}"
 }
 
