@@ -31,15 +31,15 @@ setup () {
 	[[ "$status" -eq 0 ]]
 	[[ -z "$lines" ]]
 
-	run cljog --config-get test-key
+	run ./cljog --config-get test-key
 	[[ "$status" -eq 0 ]]
 	array_contains 'a-new-value' "${lines[@]}"
 
-	run cljog --config-set test-key
+	run ./cljog --config-set test-key
 	[[ "$status" -eq 0 ]]
 	[[ -z "$lines" ]]
 
-	run cljog --config-get test-key
+	run ./cljog --config-get test-key
 	[[ "$status" -eq 0 ]]
 	[[ -z "$result" ]]
 }

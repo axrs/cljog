@@ -54,14 +54,14 @@ insert_pomegranate() {
 	local lines=""
 	while read -r line;do
 		if [[ "$replaced" -eq 0 ]]; then
-		    # Deps key and open brace on single line
+			# Deps key and open brace on single line
 			if echo "$line" | grep -q ":deps\s*{";then
-				line=$(echo "$line" | sed -E "s/:deps[[:space:]]*{/:deps {${d} /g")
+				line=$(echo "$line" | sed -E "s/:deps[[:space:]]*\{/:deps {${d} /g")
 				replaced=1
-		    # Deps key on own line
+			# Deps key on own line
 			elif echo "$line" | grep -q ":deps";then
 				deps_started=1
-		    # Deps key matched and first open brace
+			# Deps key matched and first open brace
 			elif [[ "$deps_started" -eq 1 ]] && [[ "$line" = {* ]];then
 				line=$(echo "$line" | sed -E "s/^{/{${d} /g")
 			fi
@@ -203,10 +203,8 @@ EOF
 	run_script "$tmpdir/cljog_update.clj" "$namespaces"
 }
 
-if test -f "$1";then
-	run_script "${@:1}"
-else
-	config_file=$HOME/.cljog
+-run-with-args(){
+	local config_file="$HOME/.cljog"
 
 	sed_escape() {
 		sed -e 's/[]\/$*.^[]/\\&/g'
@@ -243,9 +241,9 @@ else
 		fi
 	}
 
-	mvn_home=""
-	local_repo=""
-	namespaces=""
+	local mvn_home=""
+	local local_repo=""
+	local namespaces=""
 
 	load_config_vars() {
 		initialise_config
@@ -395,4 +393,21 @@ EOF
 			discover_clis
 			run_cli "${@:1}";;
 	esac
+}
+
+if test -f "$1";then
+	shebang_line=$(head -n 1 "${@:1}")
+	echo "$shebang_line"
+	if [[ "$shebang_line" =~ ^#!.* ]];then
+		shebang_args=$(echo "$shebang_line" | awk -F 'cljog ' '{print $2}')
+		if [[ -z "$shebang_args" ]];then
+			run_script "${@:1}"
+		else
+			-run-with-args $shebang_args "$1"
+		fi
+	else
+		run_script "${@:1}"
+	fi
+else
+	-run-with-args "${@}"
 fi
