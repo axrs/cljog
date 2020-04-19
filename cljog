@@ -63,11 +63,15 @@ insert_pomegranate() {
 				deps_started=1
 			# Deps key matched and first open brace
 			elif [[ "$deps_started" -eq 1 ]] && [[ "$line" = {* ]];then
-				line=$(echo "$line" | sed -E "s/^{/{${d} /g")
+				line=$(echo "$line" | sed -E "s/^\{/{${d} /g")
+				replaced=1
 			fi
 		fi
 		lines="${lines}\n${line}"
 	done <<< "$deps"
+	if [[ "$replaced" -eq 0 ]];then
+		lines=$(echo "$lines" | sed -E "s/\}$/ :deps {${d}}}/g")
+	fi
 	echo -e ${lines}
 }
 
@@ -402,7 +406,6 @@ EOF
 
 if test -f "$1";then
 	shebang_line=$(head -n 1 "$1")
-	echo "$shebang_line"
 	if [[ "$shebang_line" =~ ^#!.* ]];then
 		shebang_args=$(echo "$shebang_line" | awk -F 'cljog ' '{print $2}')
 		if [[ -z "$shebang_args" ]];then
