@@ -4,6 +4,8 @@
 
 Making Clojure automation scripts and CLI tools run... or at least Jog.
 
+[![AXRS](https://circleci.com/gh/axrs/cljog.svg?style=shield)](https://github.com/axrs/cljog)
+
 ```
    ____ _        _  ___   ____ 
   / ___| |      | |/ _ \ / ___|
