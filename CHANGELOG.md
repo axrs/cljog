@@ -7,6 +7,7 @@ Added:
 
 Removed:
 * `--launch-deps` in favour of `--deps`
+* Dependency on `column`
 
 Misc:
 * Upgraded `Pomegranate` to `1.2.0`
