@@ -18,7 +18,7 @@ assert_help () {
 	run ./cljog --version
 	[[ "$status" -eq 0 ]]
 
-	array_contains '1.0.1' "${lines[@]}"
+	array_contains '1.1.0' "${lines[@]}"
 }
 
 @test "prints help if given no args" {

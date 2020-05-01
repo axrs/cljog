@@ -1,3 +1,8 @@
+# 1.1.0
+
+Added:
+* Ability to control own `JAVA_OPTS` by using `CLJOG_JAVA_OPTS` environment variable. Resolves #33
+
 # 1.0.1
 
 Fixed:
