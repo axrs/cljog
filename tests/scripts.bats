@@ -18,7 +18,7 @@ load util
 	array_contains 'Script: example-scripts/echo.clj' "${lines[@]}"
 	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
 	array_contains "Current working dir: $(pwd)" "${lines[@]}"
-	array_contains 'cljog version: 1.0.0' "${lines[@]}"
+	array_contains 'cljog version: 1.0.1' "${lines[@]}"
 	array_contains 'Clojure version: {:major 1,' "${lines[@]}"
 	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"
@@ -31,7 +31,7 @@ load util
 	array_contains 'Script: example-scripts/echo.clj' "${lines[@]}"
 	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
 	array_contains "Current working dir: $(pwd)" "${lines[@]}"
-	array_contains 'cljog version: 1.0.0' "${lines[@]}"
+	array_contains 'cljog version: 1.0.1' "${lines[@]}"
 	array_contains 'Clojure version: {:major 1,' "${lines[@]}"
 	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"
@@ -64,9 +64,11 @@ load util
 }
 
 @test "scripts with --deps=deps_file.edn load then additional 'deps_file.edn' file from the script directory invoked by cljog" {
-	run ./cljog example-scripts/deps_file.clj "Extra Arg"
+	run ./cljog example-scripts/deps_file.clj "Extra Arg" "something" "Another Arg" "Last Arg"
 	[[ "$status" -eq 0 ]]
 	array_contains 'This script was run with additional deps provided by deps_file.edn' "${lines[@]}"
+	array_contains 'Extra Arg' "${lines[@]}"
+	array_contains 'Last Arg' "${lines[@]}"
 }
 
 @test "scripts with --deps=../deps_file.edn load then additional 'deps_file.edn' file from a relative directory" {

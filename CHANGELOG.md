@@ -1,3 +1,8 @@
+# 1.0.1
+
+Fixed:
+* Forwarding args to scripts with extra shebang features
+
 # 1.0.0
 
 Added:
