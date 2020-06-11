@@ -15,8 +15,9 @@ define(){ IFS='\n' read -r -d '' ${1} || true; }
 
 hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
 
-VERSION=1.2.0
+VERSION=1.3.0
 USER_DEPS='{:deps {}}}'
+RUN_WITH_BABASHKA=${CLJOG_PREFER_BB:-false}
 
 abs_path() {
 	local file
@@ -74,21 +75,14 @@ insert_pomegranate() {
 	echo -e ${lines}
 }
 
-run_script(){ # path-to-script.clj & args
-	local args='['
-	for arg in "${@:2}";do
-		args="$args \"$arg\""
-	done
-	args="$args ]"
-	local script_dir="$(dirname "$(abs_path "$1")")"
+babashka_installed(){
+	local out=$(bb --version 2>/dev/null)
+	[[ "$out" == babashka* ]]
+}
 
-	define clj_script <<EOF
-;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
-; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
-; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
-(do
+clojure_dep_loading(){ # clojure dynamic dependency loading
+	define dep_loading <<EOF
   (require '[lazy-require.core])
-
   (defn- ensure-compiler-loader []
     (when-not (bound? Compiler/LOADER)
       (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
@@ -101,32 +95,86 @@ run_script(){ # path-to-script.clj & args
            (iterate (fn [x] (.getParent ^ClassLoader x)))
            (take-while boolean))))
 
-  (defn deps [m]
-    (cond
-      (string? m)
-      (lazy-require.core/with-lazy-require [clojure.java.io]
-        (deps (clojure.java.io/as-file m)))
+  (defn- load-deps [m]
+    (lazy-require.core/with-lazy-require [dynapath.util cemerick.pomegranate cemerick.pomegranate.aether]
+      (cemerick.pomegranate/add-dependencies
+        :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+        :coordinates m
+        :repositories (merge (deref cemerick.pomegranate.aether/maven-central) {"clojars" "https://clojars.org/repo"}))))
 
-      (instance? java.io.File m)
-      (if-not (.exists ^java.io.File m)
-        (throw (Exception. "Deps file not found"))
-        (lazy-require.core/with-lazy-require [clojure.edn]
-          (->> m
+  (defn- read-deps-file [f]
+    (lazy-require.core/with-lazy-require [clojure.java.io clojure.edn]
+      (let [f (clojure.java.io/as-file f)]
+        (if-not (.exists ^java.io.File f)
+          (throw (Exception. "Deps file not found"))
+          (->> f
                str
                slurp
                ((deref clojure.edn/read-string))
                :deps
                (mapv (fn [[dep v]]
-                       [dep (:mvn/version v) :exclusions (:exclusions v)]))
-               deps)))
+                       [dep (:mvn/version v) :exclusions (:exclusions v)])))))))
+EOF
+echo "$dep_loading"
+}
+
+bb_dep_loading(){ # babashka dynamic dependency loading
+	bb_version=$(bb --version)
+	define dep_loading <<EOF
+
+  (def ^:dynamic *clojure-version* "$bb_version")
+
+  (defn- load-deps [m]
+    (let [deps-m (reduce (fn [m [d v]] (assoc m d {:mvn/version v})) {} m)
+          deps-edn (prn-str {:deps deps-m})
+          {:keys [exit out err] :as res} (shell/sh "clojure" "-Spath" "-Sdeps" deps-edn)]
+      (if (zero? exit)
+        (babashka.classpath/add-classpath out)
+        (throw (ex-info "Unable to load additional dependencies" res)))))
+
+  (defn- read-deps-file [f]
+    (->> f
+         str
+         slurp
+         edn/read-string
+         :deps
+         (mapv (fn [[dep v]]
+                 [dep (:mvn/version v) :exclusions (:exclusions v)]))))
+EOF
+echo "$dep_loading"
+}
+
+run_script(){ # path-to-script.clj & args
+	local args='['
+	for arg in "${@:2}";do
+		args="$args \"$arg\""
+	done
+	args="$args ]"
+	local script_dir="$(dirname "$(abs_path "$1")")"
+	if ! babashka_installed; then
+		RUN_WITH_BABASHKA=false
+	fi
+
+	local dep_loading
+	if $RUN_WITH_BABASHKA;then
+		dep_loading=$(bb_dep_loading)
+	else
+		dep_loading=$(clojure_dep_loading)
+	fi
+
+	define clj_script <<EOF
+;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
+; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
+; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
+(do
+  $dep_loading
+
+  (defn deps [m]
+    (cond
+      (string? m) (deps (read-deps-file m))
 
       (and (coll? m) (not (map? m)))
-      (do
-        (lazy-require.core/with-lazy-require [dynapath.util cemerick.pomegranate cemerick.pomegranate.aether]
-          (cemerick.pomegranate/add-dependencies
-            :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
-            :coordinates m
-            :repositories (merge (deref cemerick.pomegranate.aether/maven-central) {"clojars" "https://clojars.org/repo"}))))
+      (load-deps m)
 
       :else (throw (Exception. "Unknown deps format"))))
 
@@ -139,9 +187,16 @@ run_script(){ # path-to-script.clj & args
     (load-file *script*))
   nil)
 EOF
-	#language=clj
-	local DEPS=$(insert_pomegranate "$USER_DEPS")
-	exec clojure $CLJOG_JAVA_OPTS -Sdeps "$DEPS" -e "$clj_script"
+	if $RUN_WITH_BABASHKA;then
+		local cp=""
+		if [[ -n "$USER_DEPS" ]];then
+			cp=$(clojure -Spath -Sdeps "$USER_DEPS")
+		fi
+		exec bb --classpath "$cp" -e "$clj_script"
+	else
+		local DEPS=$(insert_pomegranate "$USER_DEPS")
+		exec clojure $CLJOG_JAVA_OPTS -Sdeps "$DEPS" -e "$clj_script"
+	fi
 }
 
 update_clis(){ #namespaces
@@ -208,6 +263,7 @@ update_clis(){ #namespaces
     deps))
 EOF
 	echo "$clj_script" > "$tmpdir/cljog_update.clj"
+	RUN_WITH_BABASHKA=false
 	run_script "$tmpdir/cljog_update.clj" "$namespaces"
 }
 
@@ -339,7 +395,7 @@ EOF
 		fi
 	}
 
-	config () {
+	config() {
 		initialise_config
 		if [[ -n "$1" ]] && [[ -n "$2" ]];then
 			cfg_write "$1" "$2"
@@ -403,12 +459,16 @@ miscellaneous
 EOF
 			echo -e "$usage";;
 		*)
-			discover_clis
-			run_cli "${@:1}";;
+			if test -f "$1";then
+				-run-script-eval-shebang "$@"
+			else
+				discover_clis
+				run_cli "${@:1}"
+			fi;;
 	esac
 }
 
-if test -f "$1";then
+-run-script-eval-shebang(){
 	shebang_line=$(head -n 1 "$1")
 	if [[ "$shebang_line" =~ ^#!.* ]];then
 		shebang_args=$(echo "$shebang_line" | awk -F 'cljog ' '{print $2}')
@@ -420,6 +480,15 @@ if test -f "$1";then
 	else
 		run_script "${@:1}"
 	fi
+}
+
+if [[ "$1" == --bb ]];then
+	RUN_WITH_BABASHKA=true
+	shift
+fi
+
+if test -f "$1";then
+	-run-script-eval-shebang "$@"
 else
 	-run-with-args "${@}"
 fi

@@ -1,2 +1,2 @@
 {:deps
- {io.jesi/backpack {:mvn/version "5.1.0"}}}
+ {io.jesi/backpack {:mvn/version "5.2.0"}}}

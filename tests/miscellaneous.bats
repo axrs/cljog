@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 load util
 
-assert_help () {
+assert_help() {
 	array_contains 'command discovery' "${lines[@]}"
 	array_contains 'cljog --list' "${lines[@]}"
 	array_contains 'cljog --update' "${lines[@]}"
@@ -18,7 +18,7 @@ assert_help () {
 	run ./cljog --version
 	[[ "$status" -eq 0 ]]
 
-	array_contains '1.2.0' "${lines[@]}"
+	array_contains '1.3.0' "${lines[@]}"
 }
 
 @test "prints help if given no args" {

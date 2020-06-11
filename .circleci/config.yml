@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: axrs/cljog-ci:1.0
+      - image: axrs/cljog-ci:1.3.0
     steps:
       - checkout
       - run: ./test.sh

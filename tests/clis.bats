@@ -1,13 +1,13 @@
 #!/usr/bin/env bats
 load util
 
-setup () {
+setup() {
 	mvn -q org.apache.maven.plugins:maven-dependency-plugin:3.0.0:purge-local-repository -DmanualInclude="io.axrs.cli:example"
 	discovery_namespaces_bak="$(./cljog --config-get discovery_namespaces)"
 	run ./cljog --config-set discovery_namespaces io.axrs.cli
 }
 
-install_example_cli () {
+install_example_cli() {
 	cd example && lein install > /dev/null && cd ..
 }
 
@@ -41,7 +41,6 @@ install_example_cli () {
 	run ./cljog example first-arg second-arg "third arg is a string"
 	[[ "$status" -eq 0 ]]
 	array_contains 'Hello! from the example lib' "${lines[@]}"
-	array_contains 'Clojure version: {:major 1,' "${lines[@]}"
 	array_contains 'Command line args: (first-arg second-arg third arg is a string)' "${lines[@]}"
 	array_contains 'Args:  (first-arg second-arg third arg is a string)' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"

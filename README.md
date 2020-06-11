@@ -46,6 +46,7 @@ as a Bash replacement.
 
 ### Similar Projects
 
+* [babashka](https://github.com/borkdude/babashka)
 * [closh](https://github.com/dundalek/closh)
 * [CLI-matic](https://github.com/l3nz/cli-matic)
 * [tools.cli](https://github.com/clojure/tools.cli)

@@ -1,7 +1,7 @@
 #!/usr/bin/env cljog --deps
-(deps '[[com.taoensso/encore "2.119.0"]])
+(deps '[[medley "1.3.0"]])
 (require '[io.jesi.backpack.random :as rnd]
-         '[taoensso.encore :refer [assoc-some]])
+         '[medley.core :refer [assoc-some]])
 (println (rnd/uuid-str))
 (println (first *command-line-args*))
 (println (assoc-some {} :a 1))
