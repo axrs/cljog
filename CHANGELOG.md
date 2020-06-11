@@ -5,9 +5,6 @@ Added:
   in shebang line or directly after execution
   > Note: babashka cannot load all java dependencies (as it's not a true JVM), so milage may vary
 
-Changed:
-* Lazily load additional namespaces when required. Provides slightly more performance when booting into scripts
-
 # 1.2.0
 
 Added:
