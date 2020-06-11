@@ -101,32 +101,32 @@ run_script(){ # path-to-script.clj & args
            (iterate (fn [x] (.getParent ^ClassLoader x)))
            (take-while boolean))))
 
-  (defn deps [m]
-    (cond
-      (string? m)
-      (lazy-require.core/with-lazy-require [clojure.java.io]
-        (deps (clojure.java.io/as-file m)))
+  (defn- load-deps [m]
+    (lazy-require.core/with-lazy-require [dynapath.util cemerick.pomegranate cemerick.pomegranate.aether]
+      (cemerick.pomegranate/add-dependencies
+        :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+        :coordinates m
+        :repositories (merge (deref cemerick.pomegranate.aether/maven-central) {"clojars" "https://clojars.org/repo"}))))
 
-      (instance? java.io.File m)
-      (if-not (.exists ^java.io.File m)
-        (throw (Exception. "Deps file not found"))
-        (lazy-require.core/with-lazy-require [clojure.edn]
-          (->> m
+  (defn- read-deps-file [f]
+    (lazy-require.core/with-lazy-require [clojure.java.io clojure.edn]
+      (let [f (clojure.java.io/as-file f)]
+        (if-not (.exists ^java.io.File f)
+          (throw (Exception. "Deps file not found"))
+          (->> f
                str
                slurp
                ((deref clojure.edn/read-string))
                :deps
                (mapv (fn [[dep v]]
-                       [dep (:mvn/version v) :exclusions (:exclusions v)]))
-               deps)))
+                       [dep (:mvn/version v) :exclusions (:exclusions v)])))))))
+
+  (defn deps [m]
+    (cond
+      (string? m) (deps (read-deps-file m))
 
       (and (coll? m) (not (map? m)))
-      (do
-        (lazy-require.core/with-lazy-require [dynapath.util cemerick.pomegranate cemerick.pomegranate.aether]
-          (cemerick.pomegranate/add-dependencies
-            :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
-            :coordinates m
-            :repositories (merge (deref cemerick.pomegranate.aether/maven-central) {"clojars" "https://clojars.org/repo"}))))
+      (load-deps m)
 
       :else (throw (Exception. "Unknown deps format"))))
 
@@ -141,7 +141,55 @@ run_script(){ # path-to-script.clj & args
 EOF
 	#language=clj
 	local DEPS=$(insert_pomegranate "$USER_DEPS")
-	exec clojure $CLJOG_JAVA_OPTS -Sdeps "$DEPS" -e "$clj_script"
+	# exec clojure $CLJOG_JAVA_OPTS -Sdeps "$DEPS" -e "$clj_script"
+
+	define bb_script <<EOF
+(do
+  (require '[lazy-require.core])
+
+  (defn- load-deps [m]
+    (lazy-require.core/with-lazy-require [clojure.java.shell babashka.classpath]
+      (let [deps-m (reduce (fn [m [d v]] (assoc m d {:mvn/version v})) {} m)
+            edn (prn-str {:deps deps-m})
+            {:keys [exit out err] :as res} (clojure.java.shell/sh "clojure" "-Spath" "-Sdeps" edn)]
+        (if (zero? exit)
+          (babashka.classpath/add-classpath out)
+          (throw (ex-info "Unable to load additional dependencies" res))))))
+
+  (defn- read-deps-file [f]
+    (lazy-require.core/with-lazy-require [clojure.java.io clojure.edn]
+      (let [f (clojure.java.io/as-file f)]
+        (if-not (.exists ^java.io.File f)
+          (throw (Exception. "Deps file not found"))
+          (->> f
+               str
+               slurp
+               ((deref clojure.edn/read-string))
+               :deps
+               (mapv (fn [[dep v]]
+                       [dep (:mvn/version v) :exclusions (:exclusions v)])))))))
+
+  (defn deps [m]
+    (cond
+      (string? m) (deps (read-deps-file m))
+
+      (and (coll? m) (not (map? m)))
+      (load-deps m)
+
+      :else (throw (Exception. "Unknown deps format"))))
+
+  (def ^:dynamic *clojure-version* nil)
+  (def ^:dynamic *cljog-version* "$VERSION")
+  (def ^:dynamic *cwd* (System/getProperty "user.dir"))
+  (def ^:dynamic *script* "$1")
+  (def ^:dynamic *script-dir* "$script_dir")
+
+  (binding [*command-line-args* $args]
+    (load-file *script*))
+  nil)
+EOF
+	local cp=$(clojure -Spath -Sdeps "$DEPS")
+	exec bb --classpath "$cp" -e "$bb_script"
 }
 
 update_clis(){ #namespaces
