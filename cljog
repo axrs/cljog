@@ -417,10 +417,6 @@ EOF
 	}
 
 	case "$1" in
-		--bb)
-			RUN_WITH_BABASHKA=true
-			shift
-			-run-with-args "$@";;
 		--deps)
 			shift
 			run_script_with_deps "deps.edn" "$@";;
@@ -485,6 +481,11 @@ EOF
 		run_script "${@:1}"
 	fi
 }
+
+if [[ "$1" == --bb ]];then
+	RUN_WITH_BABASHKA=true
+	shift
+fi
 
 if test -f "$1";then
 	-run-script-eval-shebang "$@"
