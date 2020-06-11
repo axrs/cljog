@@ -1,4 +1,4 @@
-array_contains () {
+array_contains() {
 	local seeking
 	seeking="$1";
 	shift

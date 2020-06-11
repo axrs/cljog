@@ -17,7 +17,7 @@ hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://c
 
 VERSION=1.2.0
 USER_DEPS='{:deps {}}}'
-RUN_WITH_BABASHKA=true
+RUN_WITH_BABASHKA=${CLJOG_PREFER_BB:-false}
 
 abs_path() {
 	local file
@@ -80,8 +80,9 @@ babashka_installed(){
 	[[ "$out" == babashka* ]]
 }
 
-clojure_dep_loading(){
+clojure_dep_loading(){ # clojure dynamic dependency loading
 	define dep_loading <<EOF
+  (require '[lazy-require.core])
   (defn- ensure-compiler-loader []
     (when-not (bound? Compiler/LOADER)
       (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
@@ -117,7 +118,7 @@ EOF
 echo "$dep_loading"
 }
 
-bb_dep_loading(){
+bb_dep_loading(){ # babashka dynamic dependency loading
 	bb_version=$(bb --version)
 	define dep_loading <<EOF
 
@@ -186,11 +187,14 @@ run_script(){ # path-to-script.clj & args
     (load-file *script*))
   nil)
 EOF
-	local DEPS=$(insert_pomegranate "$USER_DEPS")
 	if $RUN_WITH_BABASHKA;then
-		exec bb -e "$clj_script"
+		local cp=""
+		if [[ -n "$USER_DEPS" ]];then
+			cp=$(clojure -Spath -Sdeps "$USER_DEPS")
+		fi
+		exec bb --classpath "$cp" -e "$clj_script"
 	else
-		echo "Running with Clojure"
+		local DEPS=$(insert_pomegranate "$USER_DEPS")
 		exec clojure $CLJOG_JAVA_OPTS -Sdeps "$DEPS" -e "$clj_script"
 	fi
 }
@@ -198,7 +202,6 @@ EOF
 update_clis(){ #namespaces
 	local namespaces=$1
 	local tmpdir=$(dirname $(mktemp -u))
-	#FIXME Use CurlSH script and faster json reader
 	define clj_script <<EOF
 (deps '[[clj-http "3.10.0"]
         [cheshire "5.9.0"]])
@@ -260,6 +263,7 @@ update_clis(){ #namespaces
     deps))
 EOF
 	echo "$clj_script" > "$tmpdir/cljog_update.clj"
+	RUN_WITH_BABASHKA=false
 	run_script "$tmpdir/cljog_update.clj" "$namespaces"
 }
 
@@ -391,7 +395,7 @@ EOF
 		fi
 	}
 
-	config () {
+	config() {
 		initialise_config
 		if [[ -n "$1" ]] && [[ -n "$2" ]];then
 			cfg_write "$1" "$2"
@@ -416,8 +420,7 @@ EOF
 		--bb)
 			RUN_WITH_BABASHKA=true
 			shift
-			run_script "$@"
-			;;
+			-run-with-args "$@";;
 		--deps)
 			shift
 			run_script_with_deps "deps.edn" "$@";;
@@ -460,12 +463,16 @@ miscellaneous
 EOF
 			echo -e "$usage";;
 		*)
-			discover_clis
-			run_cli "${@:1}";;
+			if test -f "$1";then
+				-run-script-eval-shebang "$@"
+			else
+				discover_clis
+				run_cli "${@:1}"
+			fi;;
 	esac
 }
 
-if test -f "$1";then
+-run-script-eval-shebang(){
 	shebang_line=$(head -n 1 "$1")
 	if [[ "$shebang_line" =~ ^#!.* ]];then
 		shebang_args=$(echo "$shebang_line" | awk -F 'cljog ' '{print $2}')
@@ -477,6 +484,10 @@ if test -f "$1";then
 	else
 		run_script "${@:1}"
 	fi
+}
+
+if test -f "$1";then
+	-run-script-eval-shebang "$@"
 else
 	-run-with-args "${@}"
 fi

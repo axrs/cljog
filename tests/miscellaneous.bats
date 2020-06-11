@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 load util
 
-assert_help () {
+assert_help() {
 	array_contains 'command discovery' "${lines[@]}"
 	array_contains 'cljog --list' "${lines[@]}"
 	array_contains 'cljog --update' "${lines[@]}"

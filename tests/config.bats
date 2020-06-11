@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 load util
 
-setup () {
+setup() {
 	./cljog --config-set print-key find-this-in-catted-config
 	./cljog --config-set test-key
 }

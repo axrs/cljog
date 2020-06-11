@@ -1,3 +1,13 @@
+# 1.3.0
+
+Added:
+* Ability to run scripts using https://github.com/borkdude/babashka (if installed) by providing as first flag `--bb`
+  in shebang line or directly after execution
+  > Note: babashka cannot load all java dependencies (as it's not a true JVM), so milage may vary
+
+Changed:
+* Lazily load additional namespaces when required. Provides slightly more performance when booting into scripts
+
 # 1.2.0
 
 Added:
