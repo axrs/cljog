@@ -17,6 +17,7 @@ hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://c
 
 VERSION=1.2.0
 USER_DEPS='{:deps {}}}'
+RUN_WITH_BABASHKA=true
 
 abs_path() {
 	local file
@@ -74,21 +75,13 @@ insert_pomegranate() {
 	echo -e ${lines}
 }
 
-run_script(){ # path-to-script.clj & args
-	local args='['
-	for arg in "${@:2}";do
-		args="$args \"$arg\""
-	done
-	args="$args ]"
-	local script_dir="$(dirname "$(abs_path "$1")")"
+babashka_installed(){
+	local out=$(bb --version 2>/dev/null)
+	[[ "$out" == babashka* ]]
+}
 
-	define clj_script <<EOF
-;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
-; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
-; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
-(do
-  (require '[lazy-require.core])
-
+clojure_dep_loading(){
+	define dep_loading <<EOF
   (defn- ensure-compiler-loader []
     (when-not (bound? Compiler/LOADER)
       (.bindRoot Compiler/LOADER (clojure.lang.DynamicClassLoader. (clojure.lang.RT/baseLoader)))))
@@ -120,54 +113,60 @@ run_script(){ # path-to-script.clj & args
                :deps
                (mapv (fn [[dep v]]
                        [dep (:mvn/version v) :exclusions (:exclusions v)])))))))
-
-  (defn deps [m]
-    (cond
-      (string? m) (deps (read-deps-file m))
-
-      (and (coll? m) (not (map? m)))
-      (load-deps m)
-
-      :else (throw (Exception. "Unknown deps format"))))
-
-  (def ^:dynamic *cljog-version* "$VERSION")
-  (def ^:dynamic *cwd* (System/getProperty "user.dir"))
-  (def ^:dynamic *script* "$1")
-  (def ^:dynamic *script-dir* "$script_dir")
-
-  (binding [*command-line-args* $args]
-    (load-file *script*))
-  nil)
 EOF
-	#language=clj
-	local DEPS=$(insert_pomegranate "$USER_DEPS")
-	# exec clojure $CLJOG_JAVA_OPTS -Sdeps "$DEPS" -e "$clj_script"
+echo "$dep_loading"
+}
 
-	define bb_script <<EOF
-(do
-  (require '[lazy-require.core])
+bb_dep_loading(){
+	bb_version=$(bb --version)
+	define dep_loading <<EOF
+
+  (def ^:dynamic *clojure-version* "$bb_version")
 
   (defn- load-deps [m]
-    (lazy-require.core/with-lazy-require [clojure.java.shell babashka.classpath]
-      (let [deps-m (reduce (fn [m [d v]] (assoc m d {:mvn/version v})) {} m)
-            edn (prn-str {:deps deps-m})
-            {:keys [exit out err] :as res} (clojure.java.shell/sh "clojure" "-Spath" "-Sdeps" edn)]
-        (if (zero? exit)
-          (babashka.classpath/add-classpath out)
-          (throw (ex-info "Unable to load additional dependencies" res))))))
+    (let [deps-m (reduce (fn [m [d v]] (assoc m d {:mvn/version v})) {} m)
+          deps-edn (prn-str {:deps deps-m})
+          {:keys [exit out err] :as res} (shell/sh "clojure" "-Spath" "-Sdeps" deps-edn)]
+      (if (zero? exit)
+        (babashka.classpath/add-classpath out)
+        (throw (ex-info "Unable to load additional dependencies" res)))))
 
   (defn- read-deps-file [f]
-    (lazy-require.core/with-lazy-require [clojure.java.io clojure.edn]
-      (let [f (clojure.java.io/as-file f)]
-        (if-not (.exists ^java.io.File f)
-          (throw (Exception. "Deps file not found"))
-          (->> f
-               str
-               slurp
-               ((deref clojure.edn/read-string))
-               :deps
-               (mapv (fn [[dep v]]
-                       [dep (:mvn/version v) :exclusions (:exclusions v)])))))))
+    (->> f
+         str
+         slurp
+         edn/read-string
+         :deps
+         (mapv (fn [[dep v]]
+                 [dep (:mvn/version v) :exclusions (:exclusions v)]))))
+EOF
+echo "$dep_loading"
+}
+
+run_script(){ # path-to-script.clj & args
+	local args='['
+	for arg in "${@:2}";do
+		args="$args \"$arg\""
+	done
+	args="$args ]"
+	local script_dir="$(dirname "$(abs_path "$1")")"
+	if ! babashka_installed; then
+		RUN_WITH_BABASHKA=false
+	fi
+
+	local dep_loading
+	if $RUN_WITH_BABASHKA;then
+		dep_loading=$(bb_dep_loading)
+	else
+		dep_loading=$(clojure_dep_loading)
+	fi
+
+	define clj_script <<EOF
+;Fix for modifyable URLClassLoaders for supporting Java9 and up (required for pomegranate 1.0.0+). Refer:
+; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
+; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
+(do
+  $dep_loading
 
   (defn deps [m]
     (cond
@@ -178,7 +177,6 @@ EOF
 
       :else (throw (Exception. "Unknown deps format"))))
 
-  (def ^:dynamic *clojure-version* nil)
   (def ^:dynamic *cljog-version* "$VERSION")
   (def ^:dynamic *cwd* (System/getProperty "user.dir"))
   (def ^:dynamic *script* "$1")
@@ -188,13 +186,19 @@ EOF
     (load-file *script*))
   nil)
 EOF
-	local cp=$(clojure -Spath -Sdeps "$DEPS")
-	exec bb --classpath "$cp" -e "$bb_script"
+	local DEPS=$(insert_pomegranate "$USER_DEPS")
+	if $RUN_WITH_BABASHKA;then
+		exec bb -e "$clj_script"
+	else
+		echo "Running with Clojure"
+		exec clojure $CLJOG_JAVA_OPTS -Sdeps "$DEPS" -e "$clj_script"
+	fi
 }
 
 update_clis(){ #namespaces
 	local namespaces=$1
 	local tmpdir=$(dirname $(mktemp -u))
+	#FIXME Use CurlSH script and faster json reader
 	define clj_script <<EOF
 (deps '[[clj-http "3.10.0"]
         [cheshire "5.9.0"]])
@@ -409,6 +413,11 @@ EOF
 	}
 
 	case "$1" in
+		--bb)
+			RUN_WITH_BABASHKA=true
+			shift
+			run_script "$@"
+			;;
 		--deps)
 			shift
 			run_script_with_deps "deps.edn" "$@";;
