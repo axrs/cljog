@@ -15,7 +15,7 @@ define(){ IFS='\n' read -r -d '' ${1} || true; }
 
 hash clojure 2>/dev/null || error_exit 'Clojure tools not found. Refer https://clojure.org/guides/deps_and_cli'
 
-VERSION=1.1.0
+VERSION=1.2.0
 USER_DEPS='{:deps {}}}'
 
 abs_path() {
@@ -47,7 +47,7 @@ read_deps_edn() {
 insert_pomegranate() {
 	local deps
 	deps="$1"
-	local d='clj-commons\/pomegranate {:mvn\/version "1.2.0" :exclusions \[commons-logging\]}'
+	local d='clj-commons\/pomegranate {:mvn\/version "1.2.0" :exclusions \[commons-logging\]} com.clojure-goes-fast\/lazy-require {:mvn\/version "0.1.1"}'
 	local deps_started=0
 	local replaced=0
 	local lines=""
@@ -87,10 +87,7 @@ run_script(){ # path-to-script.clj & args
 ; - https://github.com/cemerick/pomegranate#urlclassloader-modifiability
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
 (do
-  (require '[dynapath.util]
-           '[clojure.edn]
-           '[clojure.java.io])
-  (import '(java.io File))
+  (require '[lazy-require.core])
 
   (defn- ensure-compiler-loader []
     (when-not (bound? Compiler/LOADER)
@@ -104,25 +101,33 @@ run_script(){ # path-to-script.clj & args
            (iterate (fn [x] (.getParent ^ClassLoader x)))
            (take-while boolean))))
 
-  (require '[cemerick.pomegranate])
-
   (defn deps [m]
     (cond
-      (string? m) (deps (clojure.java.io/as-file m))
-      (instance? java.io.File m) (if-not (.exists ^java.io.File m)
-                                   (throw (Exception. "Deps file not found"))
-                                   (->> m
-                                        str
-                                        slurp
-                                        clojure.edn/read-string
-                                        :deps
-                                        (mapv (fn [[dep v]]
-                                                [dep (:mvn/version v) :exclusions (:exclusions v)]))
-                                        deps))
-      (and (coll? m) (not (map? m))) (cemerick.pomegranate/add-dependencies
-                                       :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
-                                       :coordinates m
-                                       :repositories (merge cemerick.pomegranate.aether/maven-central {"clojars" "https://clojars.org/repo"}))
+      (string? m)
+      (lazy-require.core/with-lazy-require [clojure.java.io]
+        (deps (clojure.java.io/as-file m)))
+
+      (instance? java.io.File m)
+      (if-not (.exists ^java.io.File m)
+        (throw (Exception. "Deps file not found"))
+        (lazy-require.core/with-lazy-require [clojure.edn]
+          (->> m
+               str
+               slurp
+               clojure.edn/read-string
+               :deps
+               (mapv (fn [[dep v]]
+                       [dep (:mvn/version v) :exclusions (:exclusions v)]))
+               deps)))
+
+      (and (coll? m) (not (map? m)))
+      (do
+        (lazy-require.core/with-lazy-require [dynapath.util cemerick.pomegranate cemerick.pomegranate.aether]
+          (cemerick.pomegranate/add-dependencies
+            :classloader (last (filter dynapath.util/addable-classpath? (classloader-hierarchy)))
+            :coordinates m
+            :repositories (merge (deref cemerick.pomegranate.aether/maven-central) {"clojars" "https://clojars.org/repo"}))))
+
       :else (throw (Exception. "Unknown deps format"))))
 
   (def ^:dynamic *cljog-version* "$VERSION")

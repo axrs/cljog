@@ -1,3 +1,11 @@
+# 1.2.0
+
+Added:
+* Dependency on `clojure-goes-fast/lazy-require`
+
+Changed:
+* Lazily load additional namespaces when required. Provides slightly more performance when booting into scripts
+
 # 1.1.0
 
 Added:
