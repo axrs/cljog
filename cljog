@@ -114,7 +114,7 @@ run_script(){ # path-to-script.clj & args
           (->> m
                str
                slurp
-               clojure.edn/read-string
+               ((deref clojure.edn/read-string))
                :deps
                (mapv (fn [[dep v]]
                        [dep (:mvn/version v) :exclusions (:exclusions v)]))
