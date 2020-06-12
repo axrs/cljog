@@ -36,10 +36,44 @@ load util
 @test "scripts with --deps=../deps_file.edn load then additional 'deps_file.edn' file from a relative directory with --bb" {
 	if env_split_string_supported;then
 		run example-scripts/nested/deps_file_bb.clj "Extra Arg"
-		echo "$lines"
 		[[ "$status" -eq 0 ]]
 		array_contains 'This script was run with additional deps provided by relative ../deps_file.edn' "${lines[@]}"
 	else
 		skip "env does not support --split-string"
 	fi
 }
+
+@test "scripts with --deps=../deps_file.edn load then additional 'deps_file.edn' file from a relative directory with --bb in shebang by invocation" {
+	run ./cljog example-scripts/nested/deps_file_bb.clj "Extra Arg"
+	[[ "$status" -eq 0 ]]
+	array_contains 'This script was run with additional deps provided by relative ../deps_file.edn' "${lines[@]}"
+}
+
+@test "can run scripts that include dependencies with --bb in the shebang" {
+	if env_split_string_supported;then
+		run example-scripts/echo_bb.clj first-arg second-arg "third arg is a string"
+		[[ "$status" -eq 0 ]]
+		array_contains 'Hello! from the other side' "${lines[@]}"
+		array_contains 'Script: example-scripts/echo_bb.clj' "${lines[@]}"
+		array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
+		array_contains "Current working dir: $(pwd)" "${lines[@]}"
+		array_contains 'cljog version: 1.3.1' "${lines[@]}"
+		array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
+		array_contains 'Random string:' "${lines[@]}"
+	else
+		skip "env does not support --split-string"
+	fi
+}
+
+@test "can run scripts that include dependencies with --bb the shebang by invocation" {
+	run ./cljog example-scripts/echo_bb.clj first-arg second-arg "third arg is a string"
+	[[ "$status" -eq 0 ]]
+	array_contains 'Hello! from the other side' "${lines[@]}"
+	array_contains 'Script: example-scripts/echo_bb.clj' "${lines[@]}"
+	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
+	array_contains "Current working dir: $(pwd)" "${lines[@]}"
+	array_contains 'cljog version: 1.3.1' "${lines[@]}"
+	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
+	array_contains 'Random string:' "${lines[@]}"
+}
+
