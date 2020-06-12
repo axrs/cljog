@@ -1,3 +1,8 @@
+# 1.3.1
+
+Fixed:
+* Running scripts with --bb in shebang
+
 # 1.3.0
 
 Added:

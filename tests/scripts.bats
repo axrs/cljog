@@ -18,7 +18,7 @@ load util
 	array_contains 'Script: example-scripts/echo.clj' "${lines[@]}"
 	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
 	array_contains "Current working dir: $(pwd)" "${lines[@]}"
-	array_contains 'cljog version: 1.3.0' "${lines[@]}"
+	array_contains 'cljog version: 1.3.1' "${lines[@]}"
 	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"
 }
@@ -30,7 +30,7 @@ load util
 	array_contains 'Script: example-scripts/echo.clj' "${lines[@]}"
 	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
 	array_contains "Current working dir: $(pwd)" "${lines[@]}"
-	array_contains 'cljog version: 1.3.0' "${lines[@]}"
+	array_contains 'cljog version: 1.3.1' "${lines[@]}"
 	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"
 }
@@ -42,7 +42,7 @@ load util
 	array_contains 'Script: example-scripts/echo_bb.clj' "${lines[@]}"
 	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
 	array_contains "Current working dir: $(pwd)" "${lines[@]}"
-	array_contains 'cljog version: 1.3.0' "${lines[@]}"
+	array_contains 'cljog version: 1.3.1' "${lines[@]}"
 	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"
 }
@@ -54,7 +54,7 @@ load util
 	array_contains 'Script: example-scripts/echo.clj' "${lines[@]}"
 	array_contains "Script dir: $(pwd)/example-scripts" "${lines[@]}"
 	array_contains "Current working dir: $(pwd)" "${lines[@]}"
-	array_contains 'cljog version: 1.3.0' "${lines[@]}"
+	array_contains 'cljog version: 1.3.1' "${lines[@]}"
 	array_contains 'Command line args: [first-arg second-arg third arg is a string]' "${lines[@]}"
 	array_contains 'Random string:' "${lines[@]}"
 }
