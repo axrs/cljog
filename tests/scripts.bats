@@ -35,8 +35,8 @@ load util
 	array_contains 'Random string:' "${lines[@]}"
 }
 
-@test "can run scripts that include dependencies with --bb in the shebang" {
-	run example-scripts/echo_bb.clj first-arg second-arg "third arg is a string"
+@test "can run scripts that include dependencies with --bb" {
+	run ./cljog --bb example-scripts/echo_bb.clj first-arg second-arg "third arg is a string"
 	[[ "$status" -eq 0 ]]
 	array_contains 'Hello! from the other side' "${lines[@]}"
 	array_contains 'Script: example-scripts/echo_bb.clj' "${lines[@]}"
