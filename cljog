@@ -114,6 +114,12 @@ clojure_dep_loading(){ # clojure dynamic dependency loading
                :deps
                (mapv (fn [[dep v]]
                        [dep (:mvn/version v) :exclusions (:exclusions v)])))))))
+
+  (defn deps [m]
+    (cond
+      (string? m) (deps (read-deps-file m))
+      (and (coll? m) (not (map? m))) (load-deps m)
+      :else (throw (Exception. "Unknown deps format"))))
 EOF
 echo "$dep_loading"
 }
@@ -125,7 +131,7 @@ bb_dep_loading(){ # babashka dynamic dependency loading
   (def ^:dynamic *clojure-version* "$bb_version")
 
   (defn- load-deps [m]
-    (let [deps-m (reduce (fn [m [d v]] (assoc m d {:mvn/version v})) {} m)
+    (let [deps-m (if (map? m) m (reduce (fn [m [d v]] (assoc m d {:mvn/version v})) {} m))
           deps-edn (prn-str {:deps deps-m})
           {:keys [exit out err] :as res} (shell/sh "clojure" "-Spath" "-Sdeps" deps-edn)]
       (if (zero? exit)
@@ -140,6 +146,12 @@ bb_dep_loading(){ # babashka dynamic dependency loading
          :deps
          (mapv (fn [[dep v]]
                  [dep (:mvn/version v) :exclusions (:exclusions v)]))))
+
+  (defn deps [m]
+    (cond
+      (string? m) (deps (read-deps-file m))
+      (coll? m) (load-deps m)
+      :else (throw (Exception. "Unknown deps format"))))
 EOF
 echo "$dep_loading"
 }
@@ -168,15 +180,6 @@ run_script(){ # path-to-script.clj & args
 ; - https://github.com/lambdaisland/kaocha/blob/master/src/kaocha/classpath.clj
 (do
   $dep_loading
-
-  (defn deps [m]
-    (cond
-      (string? m) (deps (read-deps-file m))
-
-      (and (coll? m) (not (map? m)))
-      (load-deps m)
-
-      :else (throw (Exception. "Unknown deps format"))))
 
   (def ^:dynamic *cljog-version* "$VERSION")
   (def ^:dynamic *cwd* (System/getProperty "user.dir"))
